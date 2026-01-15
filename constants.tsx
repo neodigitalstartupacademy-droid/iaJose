@@ -3,6 +3,7 @@ import React from 'react';
 
 export const JOSE_ID = "067-2922111";
 export const DEFAULT_NEOLIFE_LINK = "https://shopneolife.com/startupforworld";
+export const FOUNDER_EMAIL = "neodigitalstartupacademy@gmail.com";
 
 export const VOICES = [
   { id: 'Zephyr', name: 'Zephyr - Calme & Équilibré (H)', description: 'Ton professionnel et posé, idéal pour les analyses de santé et bilans.' },

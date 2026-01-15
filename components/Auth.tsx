@@ -21,7 +21,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setError('');
 
     if (isFounderMode) {
-      if (email === 'jose@gmbcos.com' && founderKey === 'JOSE_GMBC_2025') {
+      if (email === 'neodigitalstartupacademy@gmail.com' && founderKey === 'JOSE_GMBC_2025') {
         const founderUser: UserAccount = {
           email,
           distData: {
@@ -129,7 +129,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={isFounderMode ? "jose@gmbcos.com" : "votre@email.com"}
+                  placeholder={isFounderMode ? "neodigitalstartupacademy@gmail.com" : "votre@email.com"}
                   className={`w-full bg-slate-50 border outline-none rounded-2xl py-4 pl-12 pr-4 text-sm font-medium transition-all ${isFounderMode ? 'border-amber-500/30 focus:border-amber-500 text-slate-900' : 'border-slate-200 focus:border-blue-500'}`}
                 />
               </div>

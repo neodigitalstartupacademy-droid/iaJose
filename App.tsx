@@ -7,6 +7,7 @@ import ChatBot from './components/ChatBot';
 import LiveSession from './components/LiveSession';
 import VisualStudio from './components/VisualStudio';
 import CellularCheck from './components/CellularCheck';
+import Academy from './components/Academy';
 import Sidebar from './components/Sidebar';
 import Auth from './components/Auth';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK } from './constants';
@@ -28,7 +29,7 @@ const App: React.FC = () => {
     if (intent) setInitialIntent(intent);
 
     if (currentUser) {
-      if (currentUser.distData.id === JOSE_ID || currentUser.email === 'jose@gmbcos.com') {
+      if (currentUser.distData.id === JOSE_ID || currentUser.email === 'neodigitalstartupacademy@gmail.com') {
         setIsOwner(true);
       }
       
@@ -143,6 +144,7 @@ const App: React.FC = () => {
           {activeView === AppView.LIVE && <LiveSession isOwner={isOwner} />}
           {activeView === AppView.VISUALS && <VisualStudio isOwner={isOwner} />}
           {activeView === AppView.CELLULAR_CHECK && <CellularCheck isOwner={isOwner} />}
+          {activeView === AppView.ACADEMY && <Academy />}
         </section>
       </main>
     </div>

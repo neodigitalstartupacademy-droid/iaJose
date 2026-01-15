@@ -2,7 +2,8 @@
 import { GoogleGenAI, Type, GenerateContentResponse, Modality } from "@google/genai";
 import { MODELS, SYSTEM_INSTRUCTIONS } from "../constants";
 
-export const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Corrected: Initializing GoogleGenAI client with process.env.API_KEY string directly.
+export const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Fixed: Correctly handle systemInstruction by calling the factory function to get the string
 export const analyzeMedicalDocument = async (prompt: string, base64Data?: string, mimeType?: string, systemInstruction?: string) => {
@@ -23,7 +24,6 @@ export const analyzeMedicalDocument = async (prompt: string, base64Data?: string
     model: MODELS.TEXT_COMPLEX,
     contents: { parts },
     config: {
-      // Fixed: SYSTEM_INSTRUCTIONS is a function, it must be called to return the string
       systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS(),
       thinkingConfig: { thinkingBudget: 32768 }
     }
@@ -32,11 +32,37 @@ export const analyzeMedicalDocument = async (prompt: string, base64Data?: string
   return response.text;
 };
 
+export const analyzeVoiceSample = async (audioBase64: string, mimeType: string) => {
+  const ai = getAI();
+  const prompt = `Analysez cet échantillon audio de ma voix. Identifiez ses caractéristiques (tonalité, énergie, vitesse). 
+  Parmi ces voix disponibles pour Coach JOSÉ : Zephyr (Calme), Kore (Dynamique), Puck (Amical), Charon (Expert), Fenrir (Profond), 
+  laquelle correspond le mieux à mon identité vocale ? Répondez au format JSON : {"recommendedVoice": "Nom", "analysis": "Explication courte"}`;
+
+  const response = await ai.models.generateContent({
+    model: MODELS.TEXT_FAST,
+    contents: {
+      parts: [
+        { inlineData: { data: audioBase64, mimeType } },
+        { text: prompt }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  try {
+    return JSON.parse(response.text);
+  } catch (e) {
+    console.error("Failed to parse voice analysis", e);
+    return null;
+  }
+};
+
 // Fixed: Correctly handle systemInstruction by calling the factory function to get the string
 export const generateEducationalResponse = async (prompt: string, useThinking: boolean = false, systemInstruction?: string) => {
   const ai = getAI();
   const config: any = {
-    // Fixed: SYSTEM_INSTRUCTIONS is a function, it must be called to return the string
     systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS(),
   };
 

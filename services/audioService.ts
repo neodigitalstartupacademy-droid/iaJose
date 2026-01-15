@@ -1,6 +1,8 @@
 
 let currentSource: AudioBufferSourceNode | null = null;
 let currentContext: AudioContext | null = null;
+let currentGainNode: GainNode | null = null;
+let currentVolume: number = 1.0;
 
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
@@ -32,28 +34,51 @@ async function decodePcmData(
 
 export const stopAllAudio = () => {
   if (currentSource) {
-    currentSource.stop();
+    try {
+      currentSource.stop();
+    } catch (e) {
+      // Ignorer si déjà arrêté
+    }
     currentSource = null;
+  }
+};
+
+export const setAudioVolume = (volume: number) => {
+  currentVolume = volume;
+  if (currentGainNode) {
+    currentGainNode.gain.setTargetAtTime(volume, currentContext!.currentTime, 0.05);
   }
 };
 
 export const playPcmAudio = async (base64Audio: string) => {
   try {
-    stopAllAudio(); // Arrête toute lecture en cours
+    stopAllAudio();
 
     if (!currentContext) {
       currentContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     }
     
+    if (currentContext.state === 'suspended') {
+      await currentContext.resume();
+    }
+
     const bytes = decodeBase64(base64Audio);
     const audioBuffer = await decodePcmData(bytes, currentContext, 24000, 1);
     
     const source = currentContext.createBufferSource();
+    const gainNode = currentContext.createGain();
+    
     source.buffer = audioBuffer;
-    source.connect(currentContext.destination);
+    gainNode.gain.value = currentVolume;
+    
+    source.connect(gainNode);
+    gainNode.connect(currentContext.destination);
+    
     source.start();
     
     currentSource = source;
+    currentGainNode = gainNode;
+    
     return source;
   } catch (error) {
     console.error("Erreur lors de la lecture audio:", error);
