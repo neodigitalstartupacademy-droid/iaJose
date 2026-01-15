@@ -118,7 +118,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         setAttachment(null);
         setDetectedIntent('health');
       } else {
-        // Logique de tri par mots-clés
         const lowerText = textToSend.toLowerCase();
         if (detectedIntent === 'unknown') {
           if (lowerText.match(/argent|revenu|succès|business|liberté|argent|travail/)) setDetectedIntent('success');
@@ -177,72 +176,102 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] bg-white max-w-full mx-auto relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-center pointer-events-none">
-        <div className={`px-6 py-2 rounded-full border-2 bg-white/80 backdrop-blur-md shadow-lg flex items-center gap-3 transition-all duration-700 ${detectedIntent !== 'unknown' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-           {detectedIntent === 'health' ? <Heart size={16} className="text-red-500" /> : <TrendingUp size={16} className="text-green-600" />}
-           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-             Cible : {detectedIntent === 'health' ? 'VITALITÉ CELLULAIRE' : 'RÉUSSITE FINANCIÈRE'}
+      {/* Header Statut Intention */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-2 flex justify-center pointer-events-none">
+        <div className={`px-4 py-1.5 rounded-full border bg-white/90 backdrop-blur-md shadow-sm flex items-center gap-2 transition-all duration-700 ${detectedIntent !== 'unknown' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+           {detectedIntent === 'health' ? <Heart size={12} className="text-red-500" /> : <TrendingUp size={12} className="text-green-600" />}
+           <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+             Cible : {detectedIntent === 'health' ? 'Nutrition Cellulaire' : 'Liberté Financière'}
            </span>
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-[20%] py-24 space-y-20">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-[25%] py-12 space-y-8">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-700`}>
-            <div className={`max-w-full ${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'}`}>
-              <div className={`flex items-center gap-3 mb-6 text-[10px] font-black tracking-widest text-slate-300 uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {msg.role === 'model' ? <div className="flex items-center gap-2 text-blue-600"><Zap size={14} className="fill-blue-600" /> COACH JOSÉ</div> : <div>PARTENAIRE <User size={12} /></div>}
+          <div key={idx} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-500`}>
+            <div className={`max-w-full ${msg.role === 'user' ? 'max-w-[70%]' : 'w-full'}`}>
+              
+              <div className={`flex items-center gap-2 mb-2 text-[8px] font-black tracking-widest text-slate-300 uppercase ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'model' ? (
+                  <div className="flex items-center gap-1.5 text-blue-600">
+                    <Zap size={10} className="fill-blue-600" /> COACH JOSÉ SOUVERAIN
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    VOUS <User size={10} />
+                  </div>
+                )}
               </div>
-              <div className={`transition-all ${msg.role === 'user' ? 'bg-slate-100 rounded-[2.5rem] px-10 py-7 text-2xl font-medium' : 'text-slate-900'}`}>
-                <div className={`prose prose-slate max-w-none ${msg.role === 'model' ? 'text-4xl md:text-[42px] leading-[1.3] font-normal tracking-tight' : 'text-2xl opacity-70'}`}>
+
+              <div className={`transition-all ${msg.role === 'user' ? 'bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-sm text-slate-700 font-medium' : 'text-slate-900'}`}>
+                <div className={`prose prose-slate max-w-none ${msg.role === 'model' ? 'text-sm leading-relaxed font-normal' : ''}`}>
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
+
                 {msg.sources && (
-                  <div className="mt-12 flex flex-wrap gap-4">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {msg.sources.map((s, i) => (
-                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 bg-blue-50 border border-blue-100 rounded-2xl text-[10px] font-black text-blue-600 hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest"><LinkIcon size={12} /> {s.title || 'Source'}</a>
+                      <a key={i} href={s.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[8px] font-black text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all uppercase tracking-widest">
+                        <LinkIcon size={10} /> {s.title || 'Source'}
+                      </a>
                     ))}
                   </div>
                 )}
-                <div className="mt-10 flex items-center gap-10">
-                  <button onClick={() => handleAudioPlayback(idx, msg.text)} className="flex items-center gap-3 text-[11px] font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-widest">{activePlayback?.index === idx ? <Square size={16} fill="currentColor" /> : <Volume2 size={16} />} {activePlayback?.index === idx ? 'Stop' : 'Écouter'}</button>
+
+                <div className="mt-4 flex items-center gap-6">
+                  <button onClick={() => handleAudioPlayback(idx, msg.text)} className="flex items-center gap-2 text-[8px] font-black text-slate-300 hover:text-blue-600 transition-all uppercase tracking-widest">
+                    {activePlayback?.index === idx ? <Square size={12} fill="currentColor" /> : <Volume2 size={12} />}
+                    {activePlayback?.index === idx ? 'Stop' : 'Lecture'}
+                  </button>
+                  <button onClick={() => navigator.clipboard.writeText(msg.text)} className="flex items-center gap-2 text-[8px] font-black text-slate-300 hover:text-blue-600 transition-all uppercase tracking-widest">
+                    <Download size={12} /> Copier
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         ))}
 
-        {/* Action Chips */}
+        {/* Action Chips Minimalistes */}
         {detectedIntent === 'unknown' && !isLoading && (
-          <div className="flex flex-col md:flex-row gap-8 animate-in slide-in-from-bottom-10 duration-1000">
-            <button onClick={() => { setDetectedIntent('health'); handleSend("J'ai besoin d'améliorer ma santé."); }} className="flex-1 p-10 bg-white border-4 border-slate-50 hover:border-blue-600 rounded-[3rem] shadow-sm hover:shadow-2xl transition-all group text-left">
-              <Heart size={32} className="text-red-500 mb-6 group-hover:scale-125 transition-transform" />
-              <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">Ma Santé</h4>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Bilan & Nutrition</p>
+          <div className="flex flex-col md:flex-row gap-4 animate-in slide-in-from-bottom-5 duration-700">
+            <button 
+              onClick={() => { setDetectedIntent('health'); handleSend("J'ai besoin d'améliorer ma santé."); }} 
+              className="flex-1 p-6 bg-white border border-slate-100 hover:border-blue-600 rounded-3xl shadow-sm hover:shadow-lg transition-all group text-left"
+            >
+              <Heart size={20} className="text-red-500 mb-3 group-hover:scale-110 transition-transform" />
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-tighter mb-1">Ma Santé</h4>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Bilan & Nutrition</p>
             </button>
-            <button onClick={() => { setDetectedIntent('success'); handleSend("Je veux bâtir un business NeoLife."); }} className="flex-1 p-10 bg-white border-4 border-slate-50 hover:border-blue-600 rounded-[3rem] shadow-sm hover:shadow-2xl transition-all group text-left">
-              <TrendingUp size={32} className="text-green-600 mb-6 group-hover:scale-125 transition-transform" />
-              <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mb-2">Ma Réussite</h4>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Revenus & Liberté</p>
+            <button 
+              onClick={() => { setDetectedIntent('success'); handleSend("Je veux bâtir un business NeoLife."); }} 
+              className="flex-1 p-6 bg-white border border-slate-100 hover:border-blue-600 rounded-3xl shadow-sm hover:shadow-lg transition-all group text-left"
+            >
+              <TrendingUp size={20} className="text-green-600 mb-3 group-hover:scale-110 transition-transform" />
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-tighter mb-1">Ma Réussite</h4>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Revenus & Liberté</p>
             </button>
           </div>
         )}
 
         {isLoading && (
-          <div className="flex flex-col gap-8 py-10">
-            <div className="text-[11px] font-black tracking-[0.3em] text-blue-300 uppercase flex items-center gap-3 animate-pulse"><Sparkles size={16} /> ÉLABORATION STRATÉGIQUE...</div>
-            <div className="space-y-4 w-full">
-              <div className="h-12 bg-slate-50 rounded-full w-full animate-pulse"></div>
-              <div className="h-12 bg-slate-50 rounded-full w-4/5 animate-pulse"></div>
+          <div className="flex flex-col gap-4 py-6">
+            <div className="text-[8px] font-black tracking-widest text-blue-300 uppercase flex items-center gap-2 animate-pulse">
+               <Sparkles size={12} /> Traitement Souverain...
+            </div>
+            <div className="space-y-2 w-full">
+              <div className="h-3 bg-slate-50 rounded-full w-full animate-pulse"></div>
+              <div className="h-3 bg-slate-50 rounded-full w-4/5 animate-pulse"></div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="px-6 md:px-[20%] pb-12 pt-6 bg-white border-t border-slate-50">
-        <div className="relative flex items-end gap-4 bg-slate-100/60 border-4 border-transparent focus-within:bg-white focus-within:border-blue-600 focus-within:shadow-2xl rounded-[3rem] p-5 transition-all duration-500">
-          <button onClick={() => fileInputRef.current?.click()} className="p-4 text-slate-400 hover:text-blue-600 transition-colors">
-            <Paperclip size={32} />
+      {/* Input de Précision */}
+      <div className="px-6 md:px-[25%] pb-8 pt-4 bg-white border-t border-slate-50">
+        <div className="relative flex items-end gap-3 bg-slate-50 border border-slate-100 focus-within:bg-white focus-within:border-blue-600 focus-within:shadow-xl rounded-2xl p-3 transition-all duration-300">
+          <button onClick={() => fileInputRef.current?.click()} className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
+            <Paperclip size={20} />
             <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
@@ -255,17 +284,28 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
               }
             }} />
           </button>
+          
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder="Commandez Coach JOSÉ..."
+            placeholder="Commandez le système..."
             rows={1}
-            className="flex-1 bg-transparent py-4 text-2xl font-medium outline-none resize-none max-h-[30vh] placeholder:text-slate-300"
+            className="flex-1 bg-transparent py-2 text-sm font-medium outline-none resize-none max-h-[30vh] placeholder:text-slate-300"
             onInput={(e: any) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           />
-          <button onClick={toggleRecording} className={`p-4 rounded-full ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-slate-400 hover:text-blue-600'}`}>{isRecording ? <MicOff size={32} /> : <Mic size={32} />}</button>
-          <button onClick={() => handleSend()} disabled={isLoading || (!input.trim() && !attachment)} className="p-6 synergy-bg text-white rounded-full shadow-2xl active:scale-90 transition-all disabled:opacity-20 flex items-center justify-center"><Send size={32} /></button>
+
+          <button onClick={toggleRecording} className={`p-2 rounded-full transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-slate-300 hover:text-blue-600'}`}>
+            {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+          </button>
+
+          <button 
+            onClick={() => handleSend()} 
+            disabled={isLoading || (!input.trim() && !attachment)} 
+            className="p-3 synergy-bg text-white rounded-xl shadow-lg active:scale-90 transition-all disabled:opacity-20 flex items-center justify-center"
+          >
+            <Send size={20} />
+          </button>
         </div>
       </div>
     </div>
