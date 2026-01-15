@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, X, FileText, Square, Paperclip, Play, Download, Link as LinkIcon, Sparkles, User, Zap, Mic, MicOff, Volume2 } from 'lucide-react';
+import { Send, X, FileText, Square, Paperclip, Play, Download, Link as LinkIcon, Sparkles, User, Zap, Mic, MicOff, Volume2, Share2, Heart, TrendingUp, Target, ArrowRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage, DistributorData } from '../types';
 import { getAI, analyzeMedicalDocument, textToSpeech } from '../services/geminiService';
@@ -19,11 +19,17 @@ interface Attachment {
   name: string;
 }
 
+type IntentType = 'health' | 'success' | 'unknown';
+
 const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) => {
   const currentId = distData?.id || JOSE_ID;
   const currentShop = distData?.shopUrl || DEFAULT_NEOLIFE_LINK;
   const storageKey = `jose_chat_history_${currentId}`;
   const draftKey = `jose_chat_draft_${currentId}`;
+
+  const [detectedIntent, setDetectedIntent] = useState<IntentType>(
+    initialIntent === 'health' ? 'health' : (initialIntent === 'welcome' ? 'unknown' : 'unknown')
+  );
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem(storageKey);
@@ -31,10 +37,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
       try { return JSON.parse(saved); } catch (e) { return []; }
     }
     
-    // Message de bienvenue adaptatif Social Sync
     const welcomeText = initialIntent === 'welcome' 
-      ? `Bonjour ! Je suis **Coach JOSÉ**, l'assistant stratégique partenaire de l'ID **${currentId}**.\n\nComment puis-je vous orienter aujourd'hui ? Santé cellulaire ou opportunité de succès ?`
-      : `Bonjour, je suis **Coach JOSÉ**. Votre système souverain de succès est prêt. Que voulez-vous closer aujourd'hui ?`;
+      ? `Bonjour ! Je suis **Coach JOSÉ**, votre partenaire stratégique.\n\nPour mieux vous guider vers la réussite, dites-moi : cherchez-vous à **optimiser votre vitalité cellulaire** ou à **bâtir une liberté financière durable** ?`
+      : `Bonjour, je suis **Coach JOSÉ**. Système souverain opérationnel. Quelle est notre cible aujourd'hui : votre santé ou votre indépendance ?`;
 
     return [{ role: 'model', text: welcomeText, timestamp: Date.now() }];
   });
@@ -107,14 +112,37 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
       let sources: { title?: string, uri?: string }[] = [];
       const sysInst = SYSTEM_INSTRUCTIONS(currentId, currentShop, isOwner);
       
+      const ai = getAI();
+      
       if (attachment) {
         responseText = await analyzeMedicalDocument(textToSend || "Analyse ce document.", attachment.data, attachment.mimeType, sysInst);
         setAttachment(null);
+        setDetectedIntent('health');
       } else {
-        const ai = getAI();
-        const chat = ai.chats.create({ model: MODELS.TEXT_COMPLEX, config: { systemInstruction: sysInst, tools: [{ googleSearch: {} }] } });
-        const response = await chat.sendMessage({ message: textToSend });
+        // Détection d'intention intelligente via un petit prompt système si inconnu
+        const intentPrompt = detectedIntent === 'unknown' 
+          ? `[IMPORTANT: Analyse ce message et determine si l'utilisateur parle de SANTE ou de BUSINESS/ARGENT. Réponds normalement mais adapte ton ton.]\n\n` 
+          : "";
+
+        const chat = ai.chats.create({ 
+          model: MODELS.TEXT_COMPLEX, 
+          config: { 
+            systemInstruction: sysInst, 
+            tools: [{ googleSearch: {} }] 
+          } 
+        });
+        
+        const response = await chat.sendMessage({ message: intentPrompt + textToSend });
         responseText = response.text || "Erreur de connexion.";
+        
+        // Logique de mise à jour d'intention basée sur les mots-clés si non détecté
+        const lowerText = textToSend.toLowerCase();
+        if (lowerText.includes('argent') || lowerText.includes('business') || lowerText.includes('revenu') || lowerText.includes('succès')) {
+          setDetectedIntent('success');
+        } else if (lowerText.includes('santé') || lowerText.includes('malade') || lowerText.includes('fatigue') || lowerText.includes('vitamines')) {
+          setDetectedIntent('health');
+        }
+
         sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks?.filter((chunk: any) => chunk.web).map((chunk: any) => ({ title: chunk.web?.title, uri: chunk.web?.uri })) || [];
       }
       
@@ -146,10 +174,40 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
     }
   };
 
+  const handleShareChat = async () => {
+    const chatText = messages.map(m => 
+      `${m.role === 'user' ? 'Moi' : 'Coach JOSÉ'}: ${m.text}`
+    ).join('\n\n');
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Ma conversation stratégique avec Coach JOSÉ',
+          text: chatText,
+        });
+      } catch (err) {
+        console.error('Erreur de partage:', err);
+      }
+    } else {
+      navigator.clipboard.writeText(chatText);
+      alert('Conversation copiée dans le presse-papier !');
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] bg-white max-w-full mx-auto relative overflow-hidden font-sans">
       
-      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-[20%] py-12 space-y-16">
+      {/* Header Intention */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-center pointer-events-none">
+        <div className={`px-6 py-2 rounded-full border bg-white/80 backdrop-blur-md shadow-sm flex items-center gap-3 transition-all duration-500 ${detectedIntent !== 'unknown' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+           {detectedIntent === 'health' ? <Heart size={16} className="text-red-500" /> : <TrendingUp size={16} className="text-green-600" />}
+           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+             Mode {detectedIntent === 'health' ? 'Nutrition Cellulaire' : 'Liberté Financière'} Actif
+           </span>
+        </div>
+      </div>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-[20%] py-20 space-y-16">
         {messages.map((msg, idx) => (
           <div key={idx} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in duration-700`}>
             <div className={`max-w-full ${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'}`}>
@@ -194,6 +252,32 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
             </div>
           </div>
         ))}
+
+        {/* Action Chips si intention inconnue */}
+        {detectedIntent === 'unknown' && !isLoading && messages.length < 4 && (
+          <div className="flex flex-col md:flex-row gap-6 animate-in slide-in-from-bottom-8 duration-1000">
+            <button 
+              onClick={() => { setDetectedIntent('health'); handleSend("Je souhaite améliorer ma santé cellulaire."); }}
+              className="flex-1 p-8 bg-white border-2 border-slate-50 hover:border-blue-600 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all group text-left"
+            >
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Heart size={24} />
+              </div>
+              <h4 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Santé Cellulaire</h4>
+              <p className="text-xs text-slate-400 font-bold uppercase">Réparer, Relancer, Protéger</p>
+            </button>
+            <button 
+              onClick={() => { setDetectedIntent('success'); handleSend("Je cherche une opportunité de revenus."); }}
+              className="flex-1 p-8 bg-white border-2 border-slate-50 hover:border-blue-600 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all group text-left"
+            >
+              <div className="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <TrendingUp size={24} />
+              </div>
+              <h4 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Liberté Financière</h4>
+              <p className="text-xs text-slate-400 font-bold uppercase">Système, Duplication, Revenus</p>
+            </button>
+          </div>
+        )}
 
         {isLoading && (
           <div className="flex flex-col gap-8 py-10 animate-pulse">
@@ -249,6 +333,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
 
           <button onClick={toggleRecording} className={`p-5 rounded-full transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-slate-400 hover:text-blue-600'}`}>
             {isRecording ? <MicOff size={32} /> : <Mic size={32} />}
+          </button>
+
+          <button 
+            onClick={handleShareChat}
+            disabled={messages.length <= 1}
+            className="p-5 text-slate-400 hover:text-blue-600 transition-all disabled:opacity-20"
+            title="Partager la conversation"
+          >
+            <Share2 size={32} />
           </button>
 
           <button 

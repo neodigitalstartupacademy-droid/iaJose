@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, MessageSquare, Mic, Image as ImageIcon, Activity, ShieldCheck, ChevronRight, Menu, X, Crown, AlertTriangle, Wallet, LogOut, Zap, Layout, Share2 } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Mic, Image as ImageIcon, Activity, ShieldCheck, ChevronRight, Menu, X, Crown, AlertTriangle, Wallet, LogOut, Zap, Layout, Share2, Globe } from 'lucide-react';
 import { AppView, DistributorData, UserAccount } from './types';
 import Dashboard from './components/Dashboard';
 import ChatBot from './components/ChatBot';
@@ -10,6 +10,7 @@ import CellularCheck from './components/CellularCheck';
 import Academy from './components/Academy';
 import ControlTower from './components/ControlTower';
 import SocialSync from './components/SocialSync';
+import IAWorld from './components/IAWorld';
 import Sidebar from './components/Sidebar';
 import Auth from './components/Auth';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK, FOUNDER_EMAIL } from './constants';
@@ -155,6 +156,7 @@ const App: React.FC = () => {
         <section className={`flex-1 overflow-y-auto custom-scrollbar p-0 ${isOwner ? 'bg-slate-950/50' : ''}`}>
           {activeView === AppView.DASHBOARD && <Dashboard onViewChange={setActiveView} isOwner={isOwner} distData={currentUser.distData} />}
           {activeView === AppView.CHAT && <ChatBot distData={currentUser.distData} isOwner={isOwner} initialIntent={initialIntent} />}
+          {activeView === AppView.IA_WORLD && <IAWorld />}
           {activeView === AppView.LIVE && <LiveSession isOwner={isOwner} />}
           {activeView === AppView.VISUALS && <VisualStudio isOwner={isOwner} />}
           {activeView === AppView.CELLULAR_CHECK && <CellularCheck isOwner={isOwner} />}

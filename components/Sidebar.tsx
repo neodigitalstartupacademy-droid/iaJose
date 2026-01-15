@@ -10,7 +10,8 @@ import {
   Zap,
   GraduationCap,
   Layout,
-  Share2
+  Share2,
+  Globe
 } from 'lucide-react';
 import { AppView } from '../types';
 import { DEFAULT_NEOLIFE_LINK } from '../constants';
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isOpen, isO
   const menuItems = [
     { id: AppView.DASHBOARD, icon: <LayoutDashboard size={18} />, label: 'Tableau de Bord' },
     { id: AppView.SOCIAL_SYNC, icon: <Share2 size={18} />, label: 'Social Sync' },
+    { id: AppView.IA_WORLD, icon: <Globe size={18} />, label: 'IA World' },
     { id: AppView.CHAT, icon: <MessageSquare size={18} />, label: 'Coach JOSÉ IA' },
     { id: AppView.CELLULAR_CHECK, icon: <Activity size={18} />, label: 'Bilan Cellulaire' },
     { id: AppView.ACADEMY, icon: <GraduationCap size={18} />, label: 'Académie GMBC' },
