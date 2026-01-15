@@ -2,10 +2,8 @@
 import { GoogleGenAI, Type, GenerateContentResponse, Modality } from "@google/genai";
 import { MODELS, SYSTEM_INSTRUCTIONS } from "../constants";
 
-// Corrected: Initializing GoogleGenAI client with process.env.API_KEY string directly.
 export const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// Fixed: Correctly handle systemInstruction by calling the factory function to get the string
 export const analyzeMedicalDocument = async (prompt: string, base64Data?: string, mimeType?: string, systemInstruction?: string) => {
   const ai = getAI();
   
@@ -20,11 +18,13 @@ export const analyzeMedicalDocument = async (prompt: string, base64Data?: string
     });
   }
 
+  // Correction : maxOutputTokens est requis quand thinkingBudget est utilisé
   const response = await ai.models.generateContent({
     model: MODELS.TEXT_COMPLEX,
     contents: { parts },
     config: {
       systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS(),
+      maxOutputTokens: 40000,
       thinkingConfig: { thinkingBudget: 32768 }
     }
   });
@@ -59,7 +59,6 @@ export const analyzeVoiceSample = async (audioBase64: string, mimeType: string) 
   }
 };
 
-// Fixed: Correctly handle systemInstruction by calling the factory function to get the string
 export const generateEducationalResponse = async (prompt: string, useThinking: boolean = false, systemInstruction?: string) => {
   const ai = getAI();
   const config: any = {
@@ -67,11 +66,12 @@ export const generateEducationalResponse = async (prompt: string, useThinking: b
   };
 
   if (useThinking) {
-    config.thinkingConfig = { thinkingBudget: 32768 };
+    config.maxOutputTokens = 30000;
+    config.thinkingConfig = { thinkingBudget: 24576 };
   }
 
   const response = await ai.models.generateContent({
-    model: MODELS.TEXT_COMPLEX,
+    model: MODELS.TEXT_FAST,
     contents: prompt,
     config
   });
