@@ -11,6 +11,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: number;
+  audio?: string; // Stockage de la version base64 PCM pour l'archivage
 }
 
 export interface DistributorData {
@@ -19,7 +20,20 @@ export interface DistributorData {
   joinDate: number;
 }
 
+export interface UserAccount {
+  email: string;
+  password?: string;
+  distData: DistributorData;
+}
+
 export interface AppState {
   isOwner: boolean;
   currentDistributor: DistributorData | null;
+}
+
+export interface SavedSession {
+  id: string;
+  title: string;
+  timestamp: number;
+  messages: ChatMessage[];
 }
