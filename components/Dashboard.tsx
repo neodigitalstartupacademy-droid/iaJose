@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, MessageSquare, Shield, Users, ArrowRight, Link, Copy, Check, Clock, Crown, TrendingUp, Share2, BarChart3, Target, MousePointer2, Info, UserPlus, ShoppingCart, Zap, UserCheck, AlertCircle, Sparkles, Heart, Loader2, XCircle, CheckCircle2, Save } from 'lucide-react';
+import { Activity, MessageSquare, Shield, Users, ArrowRight, Link, Copy, Check, Clock, Crown, TrendingUp, Share2, BarChart3, Target, MousePointer2, Info, UserPlus, ShoppingCart, Zap, UserCheck, AlertCircle, Sparkles, Heart, Loader2, XCircle, CheckCircle2, Save, Globe, Wand2 } from 'lucide-react';
 import { AppView, DistributorData, UserAccount } from '../types';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK } from '../constants';
 
@@ -10,7 +10,7 @@ interface DashboardProps {
   distData: DistributorData | null;
 }
 
-type AliasStatus = 'idle' | 'checking' | 'available' | 'taken';
+type AliasStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
 const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }) => {
   const [copied, setCopied] = useState<'smart' | 'direct' | null>(null);
@@ -23,24 +23,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
   // Simulation de base de données d'alias réservés/pris
-  const TAKEN_ALIASES = ['neo', 'vitalite', 'sante', 'jose', 'admin', 'startup', 'coach', 'gmbc', 'ndsa', 'systeme'];
+  const TAKEN_ALIASES = ['neo', 'vitalite', 'sante', 'jose', 'admin', 'startup', 'coach', 'gmbc', 'ndsa', 'systeme', 'expert', 'pro', 'vip', 'leader'];
 
   const cleanShopUrl = useMemo(() => customShop.trim().replace(/\/+$/, ''), [customShop]);
   
   const smartLink = useMemo(() => {
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const baseUrl = window.location.origin + window.location.pathname;
     const params = new URLSearchParams();
     params.set('ref', customId || JOSE_ID);
     params.set('shop', cleanShopUrl || DEFAULT_NEOLIFE_LINK);
+    
+    // Si un alias est valide et disponible, on l'ajoute au lien
     if (alias && aliasStatus === 'available') {
       params.set('alias', alias.toLowerCase().trim());
     }
+    
     return `${baseUrl}?${params.toString()}`;
   }, [customId, cleanShopUrl, alias, aliasStatus]);
 
   useEffect(() => {
+    const normalizedAlias = alias.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+    
     if (!alias.trim()) {
       setAliasStatus('idle');
+      setSuggestions([]);
+      return;
+    }
+
+    if (alias.length < 3) {
+      setAliasStatus('invalid');
       setSuggestions([]);
       return;
     }
@@ -54,15 +65,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
     setAliasStatus('checking');
     
     const timer = setTimeout(() => {
-      const normalizedAlias = alias.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
-      
       if (TAKEN_ALIASES.includes(normalizedAlias)) {
         setAliasStatus('taken');
+        // Générer des suggestions intelligentes basées sur l'alias saisi
         setSuggestions([
           `${normalizedAlias}-pro`,
+          `coach-${normalizedAlias}`,
           `${normalizedAlias}-vitality`,
-          `${normalizedAlias}-2025`
-        ]);
+          `synergy-${normalizedAlias}`,
+          `${normalizedAlias}-success`
+        ].filter(s => !TAKEN_ALIASES.includes(s)));
       } else {
         setAliasStatus('available');
         setSuggestions([]);
@@ -81,15 +93,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
 
   const applySuggestion = (s: string) => {
     setAlias(s);
-    setAliasStatus('available');
-    setSuggestions([]);
+    setAliasStatus('checking'); // Relance la vérification pour la forme
   };
 
   const handleSaveConfig = () => {
     if (!customId || !customShop) return;
     setIsSaving(true);
     
-    // Simuler sauvegarde et mettre à jour le localStorage
     const savedUser = localStorage.getItem('jose_current_user');
     if (savedUser) {
       const user: UserAccount = JSON.parse(savedUser);
@@ -97,7 +107,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
         ...user.distData,
         id: customId,
         shopUrl: customShop,
-        alias: aliasStatus === 'available' ? alias : undefined
+        alias: aliasStatus === 'available' ? alias : distData?.alias
       };
       localStorage.setItem('jose_current_user', JSON.stringify(user));
     }
@@ -171,7 +181,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
               onClick={handleSaveConfig}
               disabled={isSaving || !customId || !customShop}
               className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 ${
-                saveStatus === 'success' ? 'bg-green-600 text-white' : 'bg-slate-900 text-white hover:bg-black'
+                saveStatus === 'success' ? 'bg-green-600 text-white shadow-green-200' : 'bg-slate-900 text-white hover:bg-black'
               }`}
             >
               {isSaving ? <Loader2 size={16} className="animate-spin" /> : saveStatus === 'success' ? <CheckCircle2 size={16} /> : <Save size={16} />}
@@ -182,23 +192,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-4">
           <div className="group space-y-3">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 group-focus-within:text-blue-600 transition-colors">Identifiant NeoLife</label>
-              <input 
-                  type="text" 
-                  value={customId}
-                  onChange={(e) => setCustomId(e.target.value)}
-                  className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-900 font-black shadow-inner"
-                  placeholder="ID Distributeur"
-              />
+              <div className="relative">
+                <input 
+                    type="text" 
+                    value={customId}
+                    onChange={(e) => setCustomId(e.target.value)}
+                    className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-900 font-black shadow-inner pl-12"
+                    placeholder="ID Distributeur"
+                />
+                <Shield size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+              </div>
           </div>
           <div className="group space-y-3">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 group-focus-within:text-green-600 transition-colors">URL Boutique</label>
-              <input 
-                  type="text" 
-                  value={customShop}
-                  onChange={(e) => setCustomShop(e.target.value)}
-                  className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-green-500 focus:bg-white transition-all text-slate-900 font-black shadow-inner"
-                  placeholder="shopneolife.com/..."
-              />
+              <div className="relative">
+                <input 
+                    type="text" 
+                    value={customShop}
+                    onChange={(e) => setCustomShop(e.target.value)}
+                    className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-green-500 focus:bg-white transition-all text-slate-900 font-black shadow-inner pl-12"
+                    placeholder="shopneolife.com/..."
+                />
+                <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-green-500 transition-colors" />
+              </div>
           </div>
           <div className="group space-y-3 relative">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 group-focus-within:text-amber-500 transition-colors">Alias Personnalisé</label>
@@ -207,51 +223,72 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
                       type="text" 
                       value={alias}
                       onChange={(e) => setAlias(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                      className={`w-full p-5 bg-slate-50 border-2 rounded-2xl outline-none transition-all text-slate-900 font-black shadow-inner pr-12 ${
+                      className={`w-full p-5 bg-slate-50 border-2 rounded-2xl outline-none transition-all text-slate-900 font-black shadow-inner pr-12 pl-12 ${
                         aliasStatus === 'available' ? 'border-green-500 bg-green-50/30' : 
-                        aliasStatus === 'taken' ? 'border-red-500 bg-red-50/30' : 'border-slate-100 focus:border-amber-500'
+                        aliasStatus === 'taken' ? 'border-red-500 bg-red-50/30' : 
+                        aliasStatus === 'invalid' ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 focus:border-amber-500'
                       }`}
                       placeholder="Ex: club-vitalite"
                   />
+                  <Wand2 size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                    aliasStatus === 'available' ? 'text-green-500' : 
+                    aliasStatus === 'taken' ? 'text-red-500' : 'text-slate-300 group-focus-within:text-amber-500'
+                  }`} />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
                     {aliasStatus === 'checking' && <Loader2 size={20} className="text-amber-500 animate-spin" />}
                     {aliasStatus === 'available' && <CheckCircle2 size={20} className="text-green-500 animate-in zoom-in" />}
                     {aliasStatus === 'taken' && <XCircle size={20} className="text-red-500 animate-in zoom-in" />}
+                    {aliasStatus === 'invalid' && <AlertCircle size={20} className="text-amber-500" />}
                   </div>
               </div>
           </div>
         </div>
 
-        {/* Suggestions Panel */}
-        {aliasStatus === 'taken' && suggestions.length > 0 && (
-          <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-3xl animate-in slide-in-from-top-2">
-            <div className="flex items-center justify-between mb-4">
-               <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2">
-                <AlertCircle size={14} /> Cet alias est déjà pris. Suggestions NDSA :
-              </p>
-              <button onClick={() => setAlias('')} className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase transition-colors">Effacer</button>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {suggestions.map((s, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => applySuggestion(s)}
-                  className="px-6 py-3 bg-white border border-red-200 text-red-700 text-xs font-black rounded-xl hover:bg-red-50 hover:border-red-400 transition-all active:scale-95 shadow-sm flex items-center gap-2"
-                >
-                  <Sparkles size={12} /> {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Status Indicators & Suggestions */}
+        <div className="px-2 mb-8">
+            {aliasStatus === 'invalid' && (
+               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest flex items-center gap-2 animate-in slide-in-from-top-1">
+                <Info size={12} /> L'alias doit faire au moins 3 caractères (lettres, chiffres et tirets).
+               </p>
+            )}
+            {aliasStatus === 'available' && (
+               <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center gap-2 animate-in slide-in-from-top-1">
+                <Check size={12} /> Cet alias est parfait ! Votre Smart Link sera unique.
+               </p>
+            )}
+            {aliasStatus === 'taken' && (
+              <div className="p-6 bg-red-50 border border-red-100 rounded-3xl animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between mb-4">
+                   <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-2">
+                    <AlertCircle size={14} /> Cet alias est déjà pris. Suggestions Coach JOSÉ :
+                  </p>
+                  <button onClick={() => setAlias('')} className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase transition-colors">Vider</button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {suggestions.map((s, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => applySuggestion(s)}
+                      className="px-6 py-3 bg-white border border-red-200 text-red-700 text-xs font-black rounded-xl hover:bg-red-50 hover:border-red-400 transition-all active:scale-95 shadow-sm flex items-center gap-2 group"
+                    >
+                      <Sparkles size={12} className="group-hover:animate-pulse" /> {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+        </div>
 
         {(customId || customShop) ? (
-          <div className="p-8 md:p-12 synergy-bg rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden flex flex-col items-center justify-between gap-10 mt-10">
+          <div className="p-8 md:p-12 synergy-bg rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden flex flex-col items-center justify-between gap-10">
             <div className="relative z-10 space-y-4 text-center md:text-left w-full">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h4 className="font-black text-2xl uppercase tracking-tighter">Votre Lien de Synergie est Prêt</h4>
-                  <p className="text-blue-100 text-sm font-medium opacity-90 max-w-md">Utilisez ce lien intelligent pour automatiser votre prospection et conversion.</p>
+                  <h4 className="font-black text-2xl uppercase tracking-tighter flex items-center justify-center md:justify-start gap-3">
+                    <Zap className="text-amber-400 fill-amber-400" size={24} /> 
+                    Votre Smart Link Synergique
+                  </h4>
+                  <p className="text-blue-100 text-sm font-medium opacity-90 max-w-md">Utilisez cet alias court pour automatiser votre prospection avec Coach JOSÉ.</p>
                 </div>
                 <div className="flex gap-4">
                    <button 
@@ -263,9 +300,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
                   </button>
                 </div>
               </div>
-              <div className="mt-6 bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/20 font-mono text-xs break-all select-all flex items-center gap-4 group">
+              <div className="mt-6 bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/20 font-mono text-[10px] md:text-xs break-all select-all flex items-center gap-4 group">
                 <Link size={16} className="text-blue-300 shrink-0" />
-                <span className="flex-1 opacity-80 group-hover:opacity-100 transition-opacity">{smartLink}</span>
+                <span className="flex-1 opacity-80 group-hover:opacity-100 transition-opacity truncate md:whitespace-normal">{smartLink}</span>
               </div>
             </div>
             <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-[100px]"></div>
@@ -287,7 +324,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData }
           { label: 'Réussite Équipe', value: 'Elite', color: 'amber', icon: <Crown /> }
         ].map((stat, i) => (
           <div key={i} className="bg-white p-10 rounded-[2.5rem] border-2 border-slate-50 shadow-lg group hover:scale-105 transition-all duration-300 flex flex-col items-center md:items-start">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg ${
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg transition-all group-hover:synergy-bg group-hover:text-white ${
               stat.color === 'blue' ? 'bg-blue-100 text-blue-600' : 
               stat.color === 'green' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'
             }`}>

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Sparkles, X, FileText, Image as ImageIcon, Volume2, Volume1, VolumeX, Square, Settings2, Mic, MicOff, Trash2, RotateCcw, History, Download, Share2, Headset, MessageSquareText, Check, ChevronDown, Save, Calendar, Music, Zap, Heart, Settings, Paperclip, User, Wand2, Loader2, Play, Pause, ExternalLink, Link as LinkIcon, FileDown, Fingerprint, Activity, FlaskConical, Target, GraduationCap, FileJson, UploadCloud, Timer } from 'lucide-react';
+import { Send, Sparkles, X, FileText, Image as ImageIcon, Volume2, Volume1, VolumeX, Square, Settings2, Mic, MicOff, Trash2, RotateCcw, History, Download, Share2, Headset, MessageSquareText, Check, ChevronDown, Save, Calendar, Music, Zap, Heart, Settings, Paperclip, User, Wand2, Loader2, Play, Pause, ExternalLink, Link as LinkIcon, FileDown, FileJson, UploadCloud, Timer, Activity, FlaskConical, Target, GraduationCap, Fingerprint, CheckCircle2, CloudCheck, Cloud } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage, DistributorData, SavedSession, UserAccount } from '../types';
 import { getAI, analyzeMedicalDocument, textToSpeech, generateImage, analyzeVoiceSample } from '../services/geminiService';
@@ -49,13 +49,15 @@ const SUGGESTED_PROMPTS = [
   }
 ];
 
-const ACK_PHRASES = ["Compris !", "Bien reçu.", "J'écoute.", "C'est noté.", "Entendu.", "Je m'en occupe."];
+// Phrases courtes pour accusé de réception vocal aléatoire
+const ACK_PHRASES = ["Compris !", "Bien reçu.", "J'écoute.", "C'est noté.", "Entendu.", "Je m'en occupe.", "Synergie reçue.", "J'analyse cela."];
 
 const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) => {
   const currentId = distData?.id || JOSE_ID;
   const currentShop = distData?.shopUrl || DEFAULT_NEOLIFE_LINK;
   const storageKey = `jose_chat_history_${currentId}`;
   const archiveKey = `jose_session_archives_${currentId}`;
+  const draftKey = `jose_chat_draft_${currentId}`;
   const userKey = 'jose_current_user';
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
@@ -84,7 +86,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(() => {
+    return localStorage.getItem(draftKey) || '';
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [activePlayback, setActivePlayback] = useState<{ index: number; progress: number; duration: number } | null>(null);
   const [volume, setVolume] = useState(1.0);
@@ -94,10 +99,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
   const [selectedVoice, setSelectedVoice] = useState(currentUser?.preferredVoice || VOICES[0].id);
   const [showArchive, setShowArchive] = useState(false);
   const [showVoiceMenu, setShowVoiceMenu] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showVoiceStudio, setShowVoiceStudio] = useState(false);
-  const [avatarPrompt, setAvatarPrompt] = useState('');
-  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
   const [isAnalyzingVoice, setIsAnalyzingVoice] = useState(false);
   const [voiceAnalysisResult, setVoiceAnalysisResult] = useState<{recommendedVoice: string, analysis: string} | null>(null);
   const [isRecordingSample, setIsRecordingSample] = useState(false);
@@ -108,6 +110,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const [isAcknowledging, setIsAcknowledging] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [dropSuccess, setDropSuccess] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastAutoSave, setLastAutoSave] = useState<number>(Date.now());
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -118,17 +123,36 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const dragCounter = useRef(0);
+  const isHandsFreeRef = useRef(false);
 
+  // Auto-save messages and draft periodically
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(messages));
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, storageKey]);
+    const handleAutoSave = () => {
+        setIsAutoSaving(true);
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+        localStorage.setItem(draftKey, input);
+        setLastAutoSave(Date.now());
+        setTimeout(() => setIsAutoSaving(false), 2000);
+    };
+
+    // Reactive save on message change
+    handleAutoSave();
+
+    // Periodic heartbeat save every 60 seconds
+    const interval = setInterval(handleAutoSave, 60000);
+    return () => clearInterval(interval);
+  }, [messages, input, storageKey, draftKey]);
 
   useEffect(() => {
     localStorage.setItem(archiveKey, JSON.stringify(savedSessions));
   }, [savedSessions, archiveKey]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -158,7 +182,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
+      recognitionRef.current.continuous = true; 
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'fr-FR';
 
@@ -169,29 +193,44 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
           if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
           else interimTranscript += event.results[i][0].transcript;
         }
+        
         const currentTranscript = finalTranscript || interimTranscript;
         if (currentTranscript.trim()) setInput(currentTranscript);
         
-        if (finalTranscript) {
-          setTimeout(() => {
-            if (!isRecording) handleSend(finalTranscript);
-          }, 500);
+        if (finalTranscript && isHandsFreeRef.current) {
+          if (!activePlayback) {
+             const capturedText = finalTranscript;
+             setTimeout(() => {
+               if (isHandsFreeRef.current) handleSend(capturedText);
+             }, 800);
+          }
         }
       };
 
       recognitionRef.current.onend = () => {
-        setIsRecording(false);
+        if (isHandsFreeRef.current && !activePlayback && !isLoading && !isAcknowledging) {
+          try {
+            recognitionRef.current.start();
+          } catch (e) {
+            // Silencieux
+          }
+        } else if (!isHandsFreeRef.current) {
+          setIsRecording(false);
+        }
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error("Speech recognition error:", event.error);
-        setIsRecording(false);
+        if (event.error === 'not-allowed') {
+          isHandsFreeRef.current = false;
+          setIsRecording(false);
+        }
       };
     }
     return () => {
         if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
     };
-  }, [isRecording]);
+  }, [activePlayback, isLoading, isAcknowledging]);
 
   const processFile = useCallback((file: File) => {
     if (!file) return;
@@ -203,6 +242,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         mimeType: file.type,
         name: file.name
       });
+      setDropSuccess(true);
+      setTimeout(() => setDropSuccess(false), 2000);
     };
     reader.readAsDataURL(file);
   }, []);
@@ -215,23 +256,35 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    dragCounter.current--;
+    if (dragCounter.current <= 0) {
+      setIsDragging(false);
+      dragCounter.current = 0;
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    dragCounter.current = 0;
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFile(e.dataTransfer.files[0]);
-      e.dataTransfer.clearData();
     }
   };
 
@@ -399,22 +452,29 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
       if (audio) {
         const source = await playPcmAudio(audio);
         if (source) {
-          source.onended = () => setIsAcknowledging(false);
-        } else {
-          setIsAcknowledging(false);
+          return new Promise<void>((resolve) => {
+            source.onended = () => {
+              setIsAcknowledging(false);
+              resolve();
+            };
+            setTimeout(resolve, 3000);
+          });
         }
-      } else {
-        setIsAcknowledging(false);
       }
     } catch (e) {
-      setIsAcknowledging(false);
+      console.error("Ack vocal error", e);
     }
+    setIsAcknowledging(false);
   };
 
   const handleSend = async (overrideInput?: string) => {
     const textToSend = overrideInput || input;
     if (!textToSend.trim() && !attachment) return;
     
+    if (isHandsFreeRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+    }
+
     const wasVocal = !overrideInput && input.length > 0;
     
     const displayMessage = attachment 
@@ -424,10 +484,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
     const userMessage: ChatMessage = { role: 'user', text: displayMessage, timestamp: Date.now() };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    localStorage.removeItem(draftKey);
     setIsLoading(true);
 
-    if (wasVocal || isConversational) {
-      playAckVocal();
+    if (wasVocal || isConversational || isHandsFreeRef.current) {
+      await playAckVocal();
     }
 
     try {
@@ -453,8 +514,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         responseText = response.text || "Désolé, j'ai rencontré une erreur.";
         
         sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks
-          ?.filter(chunk => chunk.web)
-          ?.map(chunk => ({
+          ?.filter((chunk: any) => chunk.web)
+          ?.map((chunk: any) => ({
             title: chunk.web?.title,
             uri: chunk.web?.uri
           })) || [];
@@ -469,27 +530,39 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
       
       setMessages(prev => [...prev, responseMsg]);
       
-      if (isConversational) {
+      if (isConversational || isHandsFreeRef.current) {
         handleAudioPlayback(messages.length, responseMsg.text);
+      } else if (isHandsFreeRef.current) {
+          try { recognitionRef.current.start(); } catch(e) {}
       }
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { role: 'model', text: "Erreur lors de l'analyse. Veuillez réessayer.", timestamp: Date.now() }]);
+      if (isHandsFreeRef.current) {
+          try { recognitionRef.current.start(); } catch(e) {}
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleAudioPlayback = async (idx: number, text: string) => {
-      if (activePlayback?.index === idx) {
-          stopAllAudio();
+      const isAlreadyPlaying = activePlayback?.index === idx;
+      
+      stopAllAudio();
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+
+      if (isAlreadyPlaying) {
           setActivePlayback(null);
-          if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+          if (isHandsFreeRef.current) {
+            try { recognitionRef.current.start(); } catch(e) {}
+          }
           return;
       }
 
-      stopAllAudio();
-      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+      if (isHandsFreeRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+      }
 
       const msg = messages[idx];
       let audio = msg?.audio;
@@ -525,40 +598,36 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
               source.onended = () => {
                   setActivePlayback(null);
                   if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+                  
+                  if (isHandsFreeRef.current) {
+                    setTimeout(() => {
+                        if (isHandsFreeRef.current) {
+                            try { recognitionRef.current.start(); } catch(e) {}
+                        }
+                    }, 500);
+                  }
               };
+          } else if (isHandsFreeRef.current) {
+              try { recognitionRef.current.start(); } catch(e) {}
           }
+      } else if (isHandsFreeRef.current) {
+          try { recognitionRef.current.start(); } catch(e) {}
       }
   };
 
   const toggleRecording = () => {
     if (isRecording) {
+      isHandsFreeRef.current = false;
       recognitionRef.current?.stop();
       setIsRecording(false);
     } else {
       try {
+        isHandsFreeRef.current = true;
         recognitionRef.current?.start();
         setIsRecording(true);
       } catch (e) {
         console.error("Speech recognition error:", e);
       }
-    }
-  };
-
-  const handleGenerateAvatar = async () => {
-    if (!avatarPrompt.trim() || isGeneratingAvatar) return;
-    setIsGeneratingAvatar(true);
-    try {
-      const fullPrompt = `Un avatar de profil professionnel et élégant représentant : ${avatarPrompt}. Style moderne, éclairage studio, fond épuré, haute résolution, 3D render.`;
-      const url = await generateImage(fullPrompt, "1:1", "1K");
-      if (url && currentUser) {
-        const updatedUser = { ...currentUser, avatarUrl: url };
-        setCurrentUser(updatedUser);
-        localStorage.setItem(userKey, JSON.stringify(updatedUser));
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsGeneratingAvatar(false);
     }
   };
 
@@ -638,22 +707,34 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
     <div 
       ref={dropZoneRef}
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className="relative max-w-4xl mx-auto h-[calc(100vh-180px)] flex flex-col rounded-[3rem] shadow-2xl border-4 border-white overflow-hidden glass-effect transition-all duration-500"
     >
       {/* Drag & Drop Overlay */}
       {isDragging && (
-        <div className="absolute inset-0 bg-blue-600/20 backdrop-blur-md z-[60] flex items-center justify-center animate-in fade-in duration-200">
-           <div className="w-[80%] h-[80%] border-4 border-dashed border-blue-600 rounded-[3rem] flex flex-col items-center justify-center gap-6 bg-white/40 shadow-2xl">
-              <div className="w-24 h-24 synergy-bg rounded-full flex items-center justify-center text-white shadow-xl animate-bounce">
-                <UploadCloud size={48} />
+        <div className="absolute inset-0 bg-blue-600/30 backdrop-blur-md z-[60] flex items-center justify-center animate-in fade-in duration-300">
+           <div className="w-[85%] h-[85%] border-8 border-dashed border-white rounded-[4rem] flex flex-col items-center justify-center gap-8 bg-blue-600/40 shadow-2xl scale-in-95 animate-in duration-300">
+              <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-2xl animate-bounce">
+                <UploadCloud size={64} />
               </div>
-              <div className="text-center">
-                <h3 className="text-3xl font-black text-blue-900 uppercase tracking-tighter">Prêt pour l'Analyse ?</h3>
-                <p className="text-blue-700 font-bold mt-2">Lâchez votre document pour le soumettre à Coach JOSÉ</p>
+              <div className="text-center px-10">
+                <h3 className="text-4xl font-black text-white uppercase tracking-tighter drop-shadow-lg">Relâchez pour Analyser</h3>
+                <p className="text-white/90 font-bold mt-4 text-lg">Coach JOSÉ est prêt à examiner votre document nutritionnel.</p>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* Drop Success Pulse */}
+      {dropSuccess && (
+        <div className="absolute inset-0 pointer-events-none z-[61] animate-in fade-in zoom-in duration-500">
+            <div className="absolute inset-0 bg-green-500/10 backdrop-blur-[2px]"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full p-6 shadow-2xl flex flex-col items-center gap-3 animate-bounce">
+                <CheckCircle2 size={48} className="text-green-500" />
+                <span className="text-xs font-black text-green-600 uppercase tracking-widest">Document Reçu !</span>
+            </div>
         </div>
       )}
 
@@ -674,14 +755,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
           <div>
             <div className="flex items-center gap-2">
               <p className="font-black text-slate-900 tracking-tight text-lg uppercase">Coach JOSÉ</p>
-              <div className="flex gap-1">
+              <div className="flex gap-2">
                 <div className="px-2 py-0.5 bg-blue-600 rounded-lg text-[8px] font-black text-white uppercase tracking-tighter">NDSA</div>
                 <div className="px-2 py-0.5 bg-green-600 rounded-lg text-[8px] font-black text-white uppercase tracking-tighter">NEOLIFE</div>
+                {/* Auto-save Indicator */}
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 bg-white border border-slate-100 rounded-lg text-[8px] font-black uppercase tracking-tighter transition-all ${isAutoSaving ? 'text-blue-600 animate-pulse' : 'text-slate-400'}`}>
+                    {isAutoSaving ? <Cloud size={10} className="animate-bounce" /> : <CloudCheck size={10} />}
+                    <span className="hidden sm:inline">{isAutoSaving ? 'Sauvegarde...' : 'Session synchronisée'}</span>
+                </div>
               </div>
             </div>
             <p className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-widest">
               <span className={`w-2 h-2 rounded-full ${activePlayback ? 'bg-green-500' : isRecording ? 'bg-red-500' : 'bg-blue-500'} animate-pulse`}></span>
-              {isRecording ? 'MICRO ACTIF' : activePlayback ? 'LECTURE...' : 'SYNERGIE PRÊTE'}
+              {isRecording ? 'CONVERSATION ACTIVE' : activePlayback ? 'LECTURE...' : 'SYNERGIE PRÊTE'}
               <span className="w-1 h-1 rounded-full bg-slate-300"></span>
               ID: {currentId}
             </p>
@@ -733,13 +819,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
              )}
            </div>
 
-           <button onClick={() => setMessages([{ role: 'model', text: 'Nouvelle conversation initialisée.', timestamp: Date.now() }])} className="p-3.5 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 shadow-md active:scale-95" title="Nouvelle session">
+           <button onClick={() => { stopAllAudio(); setMessages([{ role: 'model', text: 'Nouvelle conversation initialisée.', timestamp: Date.now() }]); localStorage.removeItem(draftKey); setInput(''); }} className="p-3.5 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 shadow-md active:scale-95" title="Nouvelle session">
              <RotateCcw size={20} />
            </button>
         </div>
       </div>
 
-      {/* Voice Studio Modal (Existing) */}
+      {/* Voice Studio Modal */}
       {showVoiceStudio && (
         <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-2xl z-50 flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
           <div className="bg-white rounded-[3rem] p-10 max-w-lg w-full shadow-2xl relative overflow-hidden">
@@ -804,7 +890,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         </div>
       )}
 
-      {/* Archives Overlay (Existing) */}
+      {/* Archives Overlay */}
       {showArchive && (
         <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-2xl z-40 p-10 flex flex-col animate-in fade-in duration-300">
            <div className="flex justify-between items-center mb-8">
@@ -965,14 +1051,16 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
       {/* Attachment Preview Area */}
       {attachment && (
         <div className="mx-8 mb-4 animate-in slide-in-from-bottom-4">
-           <div className="bg-white border-2 border-blue-100 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+           <div className={`bg-white border-2 rounded-2xl p-4 flex items-center justify-between shadow-lg transition-all duration-500 ${dropSuccess ? 'border-green-500 bg-green-50' : 'border-blue-100'}`}>
               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dropSuccess ? 'bg-green-100 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
                     <FileText size={24} />
                  </div>
                  <div>
                     <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{attachment.name}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Fichier prêt pour analyse</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        {dropSuccess ? 'Document attaché avec succès' : 'Fichier prêt pour analyse'}
+                    </p>
                  </div>
               </div>
               <button 
@@ -991,18 +1079,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         {/* Dynamic Voice Recording Info Bar */}
         {isRecording && (
           <div className="absolute -top-12 left-0 right-0 px-8 animate-in slide-in-from-bottom-2">
-            <div className="bg-red-600 text-white rounded-full py-2 px-6 shadow-xl flex items-center justify-between border-2 border-white">
+            <div className={`text-white rounded-full py-2 px-6 shadow-xl flex items-center justify-between border-2 border-white transition-colors duration-500 ${activePlayback ? 'bg-amber-600' : 'bg-red-600'}`}>
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Activity size={12} className="animate-pulse" /> Coach JOSÉ Écoute...
+                  <Activity size={12} className={!activePlayback ? "animate-pulse" : ""} /> 
+                  {activePlayback ? "Coach JOSÉ Parle (Micro en pause)" : "Dialogue Actif : Coach JOSÉ vous écoute..."}
                 </span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex gap-1 h-3 items-center px-4 border-l border-white/20">
-                  {[1,2,3,4,5,6].map(i => (
-                    <div key={i} className="w-0.5 bg-white/60 rounded-full animate-wave" style={{height: `${Math.random()*100}%`, animationDelay: `${i*0.1}s`}}></div>
-                  ))}
+                  {activePlayback ? (
+                      <div className="text-[9px] font-black uppercase">Lecture en cours</div>
+                  ) : (
+                    [1,2,3,4,5,6].map(i => (
+                        <div key={i} className="w-0.5 bg-white/60 rounded-full animate-wave" style={{height: `${Math.random()*100}%`, animationDelay: `${i*0.1}s`}}></div>
+                    ))
+                  )}
                 </div>
                 <span className="text-[11px] font-black font-mono flex items-center gap-1.5">
                   <Timer size={12} /> {formatTime(recordingSeconds)}
@@ -1015,10 +1108,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         <div className="max-w-4xl mx-auto w-full flex items-center gap-4">
             <button 
               onClick={() => fileInputRef.current?.click()} 
-              className={`p-5 transition-all shadow-inner border-2 rounded-[1.5rem] flex items-center justify-center ${attachment ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' : 'bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 border-slate-100'}`} 
+              className={`p-5 transition-all shadow-inner border-2 rounded-[1.5rem] flex items-center justify-center ${attachment ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200 scale-105 animate-pulse-synergy' : 'bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 border-slate-100'}`} 
               title="Joindre document"
             >
-                <Paperclip size={24} className={attachment ? 'animate-pulse' : ''} />
+                <Paperclip size={24} />
                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
             </button>
             
@@ -1028,14 +1121,43 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
                 value={input} 
                 onChange={(e) => setInput(e.target.value)} 
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()} 
-                placeholder={isRecording ? "Parlez maintenant..." : "Dites quelque chose..."} 
-                className={`w-full px-8 py-5 rounded-[1.5rem] focus:outline-none text-sm font-black transition-all border-4 shadow-inner ${isRecording ? 'bg-red-50 border-red-500 text-red-900 pl-16 ring-4 ring-red-100' : 'bg-slate-50 border-slate-50 focus:bg-white focus:border-blue-500'}`} 
+                placeholder={isRecording ? (activePlayback ? "Attendez la fin de la réponse..." : "Parlez naturellement...") : "Dites quelque chose ou glissez un fichier..."} 
+                className={`w-full px-8 py-5 rounded-[1.5rem] focus:outline-none text-sm font-black transition-all border-4 shadow-inner ${isRecording ? 'bg-red-50 border-red-200 text-red-900 pl-16 ring-4 ring-red-100' : 'bg-slate-50 border-slate-50 focus:bg-white focus:border-blue-500'}`} 
               />
-              {isRecording && (
+              {isRecording && !activePlayback && (
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 flex gap-1 items-center">
                    <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></div>
                 </div>
               )}
               <button 
                 onClick={toggleRecording} 
-                className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-xl transition-all ${isRecording ? 'bg
+                className={`absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-xl transition-all ${isRecording ? 'bg-red-600 text-white shadow-lg shadow-red-200 scale-110' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+                title={isRecording ? "Désactiver le mode mains libres" : "Activer la conversation naturelle"}
+              >
+                {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => handleSend()} 
+              disabled={isLoading || (!input.trim() && !attachment)} 
+              className="p-6 rounded-[1.5rem] text-white shadow-2xl active:scale-95 transition-all group synergy-bg disabled:bg-slate-300"
+            >
+              <Send size={26} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+            </button>
+        </div>
+
+        {/* Suggested Prompts Section */}
+        <div className="flex flex-wrap gap-2.5 max-w-4xl mx-auto w-full px-2 justify-center">
+          {SUGGESTED_PROMPTS.map((item, i) => (
+            <button key={i} onClick={() => handleSend(item.prompt)} disabled={isLoading} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-[10px] font-black text-slate-600 hover:border-blue-500 hover:bg-blue-50 hover:shadow-lg transition-all active:scale-95 disabled:opacity-50">
+              {item.icon}{item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ChatBot;

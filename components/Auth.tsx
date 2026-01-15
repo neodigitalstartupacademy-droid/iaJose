@@ -21,7 +21,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setError('');
 
     if (isFounderMode) {
-      if (email === 'neodigitalstartupacademy@gmail.com' && founderKey === 'JOSE_GMBC_2025') {
+      if (email === 'neodigitalstartupacademy@gmail.com' && founderKey === 'Makoutode1982@') {
         const founderUser: UserAccount = {
           email,
           distData: {
