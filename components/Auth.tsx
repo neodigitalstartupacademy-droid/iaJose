@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Mail, Lock, UserPlus, LogIn, ShieldCheck, ArrowRight, Sparkles, Crown, Terminal } from 'lucide-react';
+import { Mail, Lock, UserPlus, LogIn, ShieldCheck, ArrowRight, Sparkles, Crown, Terminal, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { UserAccount } from '../types';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK } from '../constants';
 
@@ -11,6 +11,8 @@ interface AuthProps {
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isFounderMode, setIsFounderMode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showFounderKey, setShowFounderKey] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [founderKey, setFounderKey] = useState('');
@@ -79,102 +81,114 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100 rounded-full blur-[120px] opacity-50"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-100 rounded-full blur-[120px] opacity-30"></div>
+    <div className="min-h-screen bg-white flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] synergy-bg rounded-full blur-[150px]"></div>
       </div>
 
       <div className="max-w-md w-full relative z-10 animate-in fade-in zoom-in duration-500">
         <div className="text-center mb-10">
-          <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl transition-all duration-500 rotate-3 hover:rotate-0 ${isFounderMode ? 'bg-slate-900 shadow-amber-500/50 scale-110' : 'bg-blue-600 shadow-blue-200'}`}>
-            {isFounderMode ? <Crown className="text-amber-500" size={40} /> : <span className="text-white text-4xl font-black">J</span>}
+          <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl transition-all duration-700 ${isFounderMode ? 'bg-slate-900 shadow-amber-500/30 rotate-12 scale-110' : 'synergy-bg shadow-blue-200'}`}>
+            {isFounderMode ? <Crown className="text-amber-500" size={48} /> : <span className="text-white text-5xl font-black">J</span>}
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-            {isFounderMode ? 'ACCÈS ARCHITECTE' : 'COACH JOSÉ'}
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-2 uppercase">
+            {isFounderMode ? 'ARCHITECTE' : 'COACH JOSÉ'}
           </h1>
-          <p className="text-slate-500 font-medium italic">
-            {isFounderMode ? 'Bienvenue chez vous, José.' : 'Votre Système Intelligent NeoLife'}
+          <p className="text-slate-400 font-bold tracking-widest uppercase text-[10px]">
+            {isFounderMode ? 'Système Souverain GMBC-OS' : 'Votre IA de croissance NeoLife'}
           </p>
         </div>
 
-        <div className={`glass-effect rounded-[2.5rem] p-8 lg:p-10 shadow-2xl border transition-all duration-500 ${isFounderMode ? 'border-amber-500/30 shadow-amber-500/10' : 'border-white/50 shadow-slate-200'}`}>
-          <div className="flex mb-8 p-1 bg-slate-100 rounded-2xl">
+        <div className={`bg-white rounded-[3rem] p-10 shadow-2xl border-4 transition-all duration-500 ${isFounderMode ? 'border-amber-500' : 'border-slate-50'}`}>
+          <div className="flex mb-10 p-2 bg-slate-50 rounded-2xl">
             <button 
               onClick={() => { setIsRegistering(false); setIsFounderMode(false); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs transition-all ${!isRegistering && !isFounderMode ? 'bg-white shadow-md text-blue-600' : 'text-slate-500'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${!isRegistering && !isFounderMode ? 'bg-white shadow-md text-blue-600' : 'text-slate-400'}`}
             >
               <LogIn size={14} /> Connexion
             </button>
             <button 
               onClick={() => { setIsRegistering(true); setIsFounderMode(false); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs transition-all ${isRegistering ? 'bg-white shadow-md text-blue-600' : 'text-slate-500'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isRegistering ? 'bg-white shadow-md text-blue-600' : 'text-slate-400'}`}
             >
               <UserPlus size={14} /> Inscription
             </button>
-            <button 
-              onClick={() => { setIsFounderMode(true); setIsRegistering(false); }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs transition-all ${isFounderMode ? 'bg-slate-900 shadow-md text-amber-500' : 'text-slate-500'}`}
-            >
-              <Crown size={14} /> Fondateur
-            </button>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+          <form onSubmit={handleAuth} className="space-y-8">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Identifiant</label>
               <div className="relative">
-                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 ${isFounderMode ? 'text-amber-500' : 'text-slate-400'}`} size={18} />
+                <Mail className={`absolute left-5 top-1/2 -translate-y-1/2 ${isFounderMode ? 'text-amber-500' : 'text-slate-400'}`} size={20} />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={isFounderMode ? "neodigitalstartupacademy@gmail.com" : "votre@email.com"}
-                  className={`w-full bg-slate-50 border outline-none rounded-2xl py-4 pl-12 pr-4 text-sm font-medium transition-all ${isFounderMode ? 'border-amber-500/30 focus:border-amber-500 text-slate-900' : 'border-slate-200 focus:border-blue-500'}`}
+                  placeholder="votre@email.com"
+                  className="w-full bg-slate-50 border-2 border-slate-50 outline-none rounded-2xl py-5 pl-14 pr-4 text-sm font-bold focus:border-blue-600 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                {isFounderMode ? 'Code Architecte' : 'Mot de passe'}
-              </label>
-              <div className="relative">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isFounderMode ? 'Clé de Souveraineté' : 'Mot de passe'}</label>
+                {!isFounderMode && password.length > 0 && (
+                  <span className={`text-[9px] font-bold uppercase ${password.length > 8 ? 'text-green-500' : 'text-amber-500'}`}>
+                    {password.length > 8 ? 'SÉCURISÉ' : 'FAIBLE'}
+                  </span>
+                )}
+              </div>
+              <div className="relative group">
                 {isFounderMode ? (
-                  <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500" size={18} />
+                  <Terminal className="absolute left-5 top-1/2 -translate-y-1/2 text-amber-500" size={20} />
                 ) : (
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 )}
                 <input 
-                  type="password" 
+                  type={isFounderMode ? (showFounderKey ? "text" : "password") : (showPassword ? "text" : "password")}
                   value={isFounderMode ? founderKey : password}
                   onChange={(e) => isFounderMode ? setFounderKey(e.target.value) : setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full bg-slate-50 border outline-none rounded-2xl py-4 pl-12 pr-4 text-sm font-medium transition-all ${isFounderMode ? 'border-amber-500/30 focus:border-amber-500' : 'border-slate-200 focus:border-blue-500'}`}
+                  className={`w-full bg-slate-50 border-2 outline-none rounded-2xl py-5 pl-14 pr-14 text-sm font-bold transition-all ${isFounderMode ? 'border-amber-200 focus:border-amber-500' : 'border-slate-50 focus:border-blue-600 focus:bg-white'}`}
                 />
+                <button 
+                  type="button"
+                  onClick={() => isFounderMode ? setShowFounderKey(!showFounderKey) : setShowPassword(!showPassword)}
+                  className={`absolute right-5 top-1/2 -translate-y-1/2 transition-all p-1 rounded-md ${showPassword || showFounderKey ? 'text-blue-600 bg-blue-50' : 'text-slate-300 hover:text-slate-500'}`}
+                >
+                  {(isFounderMode ? showFounderKey : showPassword) ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
+              {showPassword && !isFounderMode && (
+                <p className="text-[9px] text-blue-500 font-bold uppercase tracking-widest flex items-center gap-1 mt-2">
+                  <CheckCircle2 size={10} /> Mode visibilité activé - Vérifiez votre saisie
+                </p>
+              )}
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-[11px] font-bold rounded-xl flex items-center gap-2 animate-in slide-in-from-top-2">
-                <ShieldCheck size={14} /> {error}
+              <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-[11px] font-bold rounded-2xl flex items-center gap-2 animate-pulse">
+                <ShieldCheck size={16} /> {error}
               </div>
             )}
 
             <button 
               type="submit"
-              className={`w-full font-black py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-[0.98] ${isFounderMode ? 'bg-slate-900 hover:bg-black text-amber-500 shadow-amber-500/10' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'}`}
+              className={`w-full font-black py-6 rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95 text-xs uppercase tracking-[0.2em] ${isFounderMode ? 'bg-slate-900 text-amber-500 hover:bg-black shadow-amber-500/20' : 'synergy-bg text-white hover:opacity-90 shadow-blue-200'}`}
             >
-              {isFounderMode ? 'LANCER GOD MODE' : isRegistering ? 'Créer mon compte' : 'Accéder au système'}
+              {isFounderMode ? 'ACTIVER SYSTÈME' : isRegistering ? 'Initialiser Compte' : 'Accéder au Système'}
               <ArrowRight size={20} />
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-              <Sparkles size={12} className={isFounderMode ? 'text-amber-500' : 'text-blue-500'} /> Accès Fondateur Permanent Activé
-            </p>
-          </div>
+          <button 
+            onClick={() => setIsFounderMode(!isFounderMode)}
+            className="w-full mt-8 text-[9px] font-black text-slate-300 uppercase tracking-widest hover:text-amber-500 transition-colors"
+          >
+            {isFounderMode ? 'Retour à la connexion standard' : 'Accès Fondateur GMBC-OS'}
+          </button>
         </div>
       </div>
     </div>
