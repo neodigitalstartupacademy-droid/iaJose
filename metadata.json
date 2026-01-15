@@ -1,0 +1,9 @@
+{
+  "name": "Coach José - Central AI Agent",
+  "description": "Coach José is the intelligent central agent for GMBC-OS and NeoLife, designed to educate on cellular nutrition, orient seekers, and duplicate success ethically.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
