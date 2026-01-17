@@ -6,68 +6,31 @@ export const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const analyzeMedicalDocument = async (prompt: string, base64Data?: string, mimeType?: string, systemInstruction?: string) => {
   const ai = getAI();
-  
   const parts: any[] = [{ text: prompt }];
-  
   if (base64Data && mimeType) {
-    parts.push({
-      inlineData: {
-        data: base64Data,
-        mimeType: mimeType
-      }
-    });
+    parts.push({ inlineData: { data: base64Data, mimeType } });
   }
 
-  // Correction : maxOutputTokens est requis quand thinkingBudget est utilisé
   const response = await ai.models.generateContent({
     model: MODELS.TEXT_COMPLEX,
     contents: { parts },
     config: {
       systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS(),
-      maxOutputTokens: 40000,
-      thinkingConfig: { thinkingBudget: 32768 }
+      maxOutputTokens: 20000,
+      thinkingConfig: { thinkingBudget: 15000 }
     }
   });
-
   return response.text;
-};
-
-export const analyzeVoiceSample = async (audioBase64: string, mimeType: string) => {
-  const ai = getAI();
-  const prompt = `Analysez cet échantillon audio de ma voix. Identifiez ses caractéristiques (tonalité, énergie, vitesse). 
-  Parmi ces voix disponibles pour Coach JOSÉ : Zephyr (Calme), Kore (Dynamique), Puck (Amical), Charon (Expert), Fenrir (Profond), 
-  laquelle correspond le mieux à mon identité vocale ? Répondez au format JSON : {"recommendedVoice": "Nom", "analysis": "Explication courte"}`;
-
-  const response = await ai.models.generateContent({
-    model: MODELS.TEXT_FAST,
-    contents: {
-      parts: [
-        { inlineData: { data: audioBase64, mimeType } },
-        { text: prompt }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json"
-    }
-  });
-
-  try {
-    return JSON.parse(response.text);
-  } catch (e) {
-    console.error("Failed to parse voice analysis", e);
-    return null;
-  }
 };
 
 export const generateEducationalResponse = async (prompt: string, useThinking: boolean = false, systemInstruction?: string) => {
   const ai = getAI();
-  const config: any = {
-    systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS(),
-  };
+  const config: any = { systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS() };
 
+  // Fix: Replaced colon (:) with equals (=) for property assignment in Javascript/Typescript logic
   if (useThinking) {
-    config.maxOutputTokens = 30000;
-    config.thinkingConfig = { thinkingBudget: 24576 };
+    config.maxOutputTokens = 20000;
+    config.thinkingConfig = { thinkingBudget: 15000 };
   }
 
   const response = await ai.models.generateContent({
@@ -75,51 +38,60 @@ export const generateEducationalResponse = async (prompt: string, useThinking: b
     contents: prompt,
     config
   });
-
   return response.text;
 };
 
-export const searchGrounding = async (query: string) => {
+export const textToSpeech = async (text: string, voiceName: string = 'Kore') => {
   const ai = getAI();
   const response = await ai.models.generateContent({
-    model: MODELS.TEXT_FAST,
-    contents: query,
+    model: MODELS.TTS,
+    contents: [{ parts: [{ text }] }],
     config: {
-      tools: [{ googleSearch: {} }],
-    },
+      responseModalities: [Modality.AUDIO],
+      speechConfig: {
+        voiceConfig: { prebuiltVoiceConfig: { voiceName } }
+      }
+    }
   });
-  
-  const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks?.map((chunk: any) => ({
-    title: chunk.web?.title,
-    uri: chunk.web?.uri
-  })) || [];
-
-  return { text: response.text, sources };
+  return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
 };
 
-export const generateImage = async (prompt: string, aspectRatio: string = "1:1", size: string = "1K") => {
-  const ai = getAI();
+/* Fix: Added generateImage function for high-quality image generation using gemini-3-pro-image-preview */
+export const generateImage = async (prompt: string, aspectRatio: string = "1:1", imageSize: string = "1K") => {
+  // Check for API key selection as required for high-quality image models
+  if (!(await (window as any).aistudio.hasSelectedApiKey())) {
+    await (window as any).aistudio.openSelectKey();
+  }
+
+  // Create fresh instance right before call to use latest selected key
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: MODELS.IMAGE,
     contents: { parts: [{ text: prompt }] },
     config: {
       imageConfig: {
         aspectRatio: aspectRatio as any,
-        imageSize: size as any
+        imageSize: imageSize as any
       }
     }
   });
 
-  for (const part of response.candidates[0].content.parts) {
-    if (part.inlineData) {
-      return `data:image/png;base64,${part.inlineData.data}`;
-    }
+  const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+  if (part?.inlineData) {
+    return `data:image/png;base64,${part.inlineData.data}`;
   }
-  return null;
+  throw new Error("No image data returned from model");
 };
 
+/* Fix: Added generateVideo function using veo-3.1-fast-generate-preview with operation polling as per SDK guidelines */
 export const generateVideo = async (prompt: string, aspectRatio: '16:9' | '9:16' = '16:9') => {
-  const ai = getAI();
+  // Check for API key selection as required for video generation models
+  if (!(await (window as any).aistudio.hasSelectedApiKey())) {
+    await (window as any).aistudio.openSelectKey();
+  }
+
+  // Create fresh instance right before call
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   let operation = await ai.models.generateVideos({
     model: MODELS.VIDEO,
     prompt: prompt,
@@ -136,28 +108,8 @@ export const generateVideo = async (prompt: string, aspectRatio: '16:9' | '9:16'
   }
 
   const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-  const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-};
-
-export const textToSpeech = async (text: string, voiceName: string = 'Kore') => {
-  const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: MODELS.TTS,
-    contents: [{ parts: [{ text }] }],
-    config: {
-      responseModalities: [Modality.AUDIO],
-      speechConfig: {
-        voiceConfig: {
-          prebuiltVoiceConfig: { voiceName }
-        }
-      }
-    }
-  });
-
-  const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  if (!base64Audio) return null;
-
-  return base64Audio;
+  if (!downloadLink) throw new Error("Video generation failed to return a valid download URI");
+  
+  // Return the video link with the API key appended for authorized access
+  return `${downloadLink}&key=${process.env.API_KEY}`;
 };

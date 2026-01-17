@@ -3,7 +3,6 @@ export enum AppView {
   DASHBOARD = 'dashboard',
   CHAT = 'chat',
   LIVE = 'live',
-  VISUALS = 'visuals',
   CELLULAR_CHECK = 'cellular_check',
   ACADEMY = 'academy',
   CONTROL_TOWER = 'control_tower',

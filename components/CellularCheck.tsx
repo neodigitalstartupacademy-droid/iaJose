@@ -4,6 +4,12 @@ import { Activity, ArrowRight, RefreshCcw, ShieldCheck, Sparkles, Zap, CheckCirc
 import { generateEducationalResponse } from '../services/geminiService';
 import { stopAllAudio } from '../services/audioService';
 import ReactMarkdown from 'react-markdown';
+import { AppView } from '../types';
+
+interface CellularCheckProps {
+  onViewChange?: (view: AppView) => void;
+  onSetIntent?: (intent: string) => void;
+}
 
 const QUESTIONS = [
   { 
@@ -47,7 +53,7 @@ const QUESTIONS = [
   }
 ];
 
-const CellularCheck: React.FC = () => {
+const CellularCheck: React.FC<CellularCheckProps> = ({ onViewChange, onSetIntent }) => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({ fatigue: '5' });
   const [result, setResult] = useState<string | null>(null);
@@ -84,6 +90,11 @@ const CellularCheck: React.FC = () => {
       clearInterval(interval);
       setIsLoading(false);
     }
+  };
+
+  const handleAccessProtocol = () => {
+    if (onSetIntent) onSetIntent('health');
+    if (onViewChange) onViewChange(AppView.CHAT);
   };
 
   const getFatigueVisual = (val: number) => {
@@ -218,7 +229,10 @@ const CellularCheck: React.FC = () => {
                 </div>
               </div>
 
-              <button className="w-full py-8 synergy-bg text-white rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-6">
+              <button 
+                onClick={handleAccessProtocol}
+                className="w-full py-8 synergy-bg text-white rounded-[2.5rem] font-black uppercase tracking-[0.4em] text-lg shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-6"
+              >
                 ACCÉDER AU PROTOCOLE <ArrowRight size={28} />
               </button>
             </div>
