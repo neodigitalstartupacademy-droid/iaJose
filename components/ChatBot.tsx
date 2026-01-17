@@ -49,19 +49,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
   const nextStartTimeRef = useRef(0);
   const liveSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
 
-  const activeVoiceName = VOICES.find(v => v.id === selectedVoice)?.name || "Souverain";
+  const activeVoiceName = VOICES.find(v => v.id === selectedVoice)?.id || "Charon";
 
   const QUICK_PROMPTS_LEFT = [
-    { label: 'Espace Medecins/ Docteurs', icon: <Stethoscope size={14} className="text-blue-400" />, text: "Analyse ce cas clinique sous l'angle de la nutrition cellulaire NeoLife avec une réflexion approfondie." },
+    { label: 'Espace Medecins/ Docteurs', icon: <Stethoscope size={14} className="text-blue-400" />, text: "Analysez ce cas clinique complexe sous l'angle de la nutrition cellulaire NeoLife. Comment les travaux du SAB et les protocoles de nutrition cellulaire peuvent-ils accompagner ces patients ?" },
     { 
       label: "Qu'est-ce NeoLife / GMBC-OS", 
       icon: <Rocket size={14} className="text-amber-500" />, 
-      text: "Explique-moi la vision GMBC-OS. Pourquoi est-ce le temps de la gloire pour NeoLife ? Comment cet outil, attendu depuis 1958, met-il fin à la douleur des distributeurs grâce au MLM moderne et automatisé ? Détaille comment il crée la médecine du futur en ouvrant une passerelle pour les médecins vers l'expertise de Coach José, les travaux de la SAB et les protocoles de nutrition cellulaire NeoLife." 
+      text: "Expliquez-moi pourquoi c'est enfin le temps de la gloire pour NeoLife avec GMBC-OS. Pourquoi cet outil était-il attendu depuis 1958 pour éviter tant de douleur et d'abandons ? Comment crée-t-il la médecine du futur en ouvrant une passerelle pour les médecins vers l'expertise de Coach José et le protocole de Nutrition Cellulaire ?" 
     }
   ];
 
   const QUICK_PROMPTS_RIGHT = [
-    { label: 'Duplication NDSA', icon: <Target size={14} className="text-amber-500" />, text: "Comment automatiser mon closing avec le système GMBC-OS ?" },
+    { label: 'Duplication NDSA', icon: <Target size={14} className="text-amber-500" />, text: "Comment automatiser mon closing et ma duplication à 100% avec le système GMBC-OS ?" },
     { label: 'Live Vocal', icon: <Mic size={14} className="text-green-500" />, action: 'live' }
   ];
 
@@ -156,8 +156,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
         },
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
-          systemInstruction: SYSTEM_INSTRUCTIONS(currentId, currentShop, isOwner) + "\nMODE LIVE VOCAL ACTIF. Soyez concis et percutant.",
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } },
+          systemInstruction: SYSTEM_INSTRUCTIONS(currentId, currentShop, isOwner) + "\nMODE LIVE VOCAL ACTIF. Soyez visionnaire et percutant.",
           inputAudioTranscription: {},
           outputAudioTranscription: {}
         }
@@ -166,12 +166,17 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
     } catch (err) { console.error(err); }
   };
 
+  // Added handleFile to handle document selection and base64 encoding
   const handleFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      const data = base64.split(',')[1];
-      setAttachment({ data, mimeType: file.type, name: file.name });
+      const base64Data = e.target?.result as string;
+      const data = base64Data.split(',')[1];
+      setAttachment({
+        data,
+        mimeType: file.type,
+        name: file.name
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -233,12 +238,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
 
         const config: any = { 
           systemInstruction: sysInst,
-          maxOutputTokens: useThinking ? 30000 : 4000,
+          // Fixed: If you need to set maxOutputTokens, thinkingBudget must be smaller.
+          maxOutputTokens: useThinking ? 40000 : 4000,
           tools,
           toolConfig
         };
         
         if (useThinking && !isMapQuery) {
+          // Fixed: set a smaller thinkingBudget to reserve tokens for final output.
           config.thinkingConfig = { thinkingBudget: 32000 };
         }
 
@@ -315,14 +322,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
          </div>
       </div>
 
-      {/* Neural Pulse UI for Thinking Mode */}
-      {isLoading && useThinking && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-500/10 blur-[150px] rounded-full animate-pulse-synergy"></div>
-          <div className="absolute bottom-0 left-0 w-full h-[50vh] bg-gradient-to-t from-blue-500/5 to-transparent"></div>
-        </div>
-      )}
-
       {/* Messages Zone */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-[12%] py-12 space-y-12 bg-slate-50/10 dark:bg-slate-950/20 relative z-10">
         {messages.map((msg, idx) => (
@@ -331,14 +330,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
               <div className={`text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-3 flex items-center gap-2 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                 {msg.role === 'model' ? <><div className="w-6 h-6 synergy-bg rounded-lg flex items-center justify-center text-white text-[10px] font-black">J</div> COACH JOSÉ</> : <>VOUS <Activity size={10} /></>}
               </div>
-              <div className={`p-8 md:p-10 rounded-[3rem] text-[18px] leading-relaxed shadow-sm transition-all duration-300 ${msg.role === 'user' ? 'bg-slate-900 text-white border border-slate-800 shadow-xl' : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 shadow-2xl'}`}>
+              <div className={`p-8 md:p-10 rounded-[3rem] text-[18px] font-medium leading-relaxed shadow-sm transition-all duration-300 ${msg.role === 'user' ? 'bg-slate-900 text-white border border-slate-800 shadow-xl' : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 shadow-2xl'}`}>
                 <ReactMarkdown className="prose prose-slate dark:prose-invert max-w-none prose-lg">{msg.text}</ReactMarkdown>
                 
                 {msg.sources && (
                   <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-3">
                     {msg.sources.map((src, si) => (
                       <a key={si} href={src.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 uppercase tracking-widest transition-all group">
-                        {src.type === 'maps' ? <MapPin size={14} className="text-red-500" /> : <Globe size={14} className="text-blue-500" />}
+                        {src.uri?.includes('google.com/maps') ? <MapPin size={14} className="text-red-500" /> : <Globe size={14} className="text-blue-500" />}
                         <span className="truncate max-w-[150px]">{src.title || "Source"}</span>
                         <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                       </a>
@@ -366,13 +365,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
           </div>
         ))}
         {isLoading && (
-          <div className="flex items-center gap-5 py-8 text-blue-600 animate-in fade-in">
+          <div className="flex items-center gap-5 py-8 text-blue-600 animate-in fade-in relative">
              <div className="relative">
-                <BrainCircuit size={32} className={`animate-pulse ${useThinking ? 'text-blue-600 drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]' : ''}`} />
+                <BrainCircuit size={40} className={`animate-pulse ${useThinking ? 'text-blue-500 drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]' : ''}`} />
              </div>
              <div className="flex flex-col">
-                <span className="text-[13px] font-black uppercase tracking-[0.4em]">{useThinking ? 'SYNTHÈSE NEURONALE PROFONDE...' : 'CONCEPTION DU PROTOCOLE...'}</span>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Moteur {useThinking ? 'Gemini 3 Pro' : 'Gemini 3 Flash'} v4.5</span>
+                <span className="text-[14px] font-black uppercase tracking-[0.4em]">{useThinking ? 'SYNTHÈSE NEURONALE PROFONDE...' : 'CONCEPTION DU PROTOCOLE...'}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Moteur {useThinking ? 'Gemini 3 Pro' : 'Gemini 3 Flash'} v4.5</span>
              </div>
           </div>
         )}
@@ -381,7 +380,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent }) =
       {/* Cockpit Trident Interface */}
       <div className="p-6 md:px-10 md:py-8 bg-slate-950 dark:bg-black border-t border-slate-900 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] relative z-20">
         <div className="max-w-[1500px] mx-auto flex flex-col lg:flex-row items-center gap-8">
-          {/* Left Wing - Medical & Vision */}
+          {/* Left Wing - Visionary Prompts */}
           <div className="hidden lg:flex flex-col gap-3 w-[260px] shrink-0">
             {QUICK_PROMPTS_LEFT.map((p, i) => (
               <button key={i} onClick={() => handleSend(p.text)} className="px-5 py-4 bg-slate-900/50 border border-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-4 group">
