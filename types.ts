@@ -15,7 +15,19 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
   audio?: string;
+  isLive?: boolean;
   sources?: { title?: string; uri?: string }[];
+}
+
+export interface NeoLifeSale {
+  id: string;
+  productName: string;
+  customerName: string;
+  customerContact: string;
+  pv: number;
+  bv: number;
+  commission: number;
+  date: number;
 }
 
 export interface DistributorData {
