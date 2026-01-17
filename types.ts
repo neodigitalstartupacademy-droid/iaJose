@@ -7,7 +7,8 @@ export enum AppView {
   ACADEMY = 'academy',
   CONTROL_TOWER = 'control_tower',
   SOCIAL_SYNC = 'social_sync',
-  IA_WORLD = 'ia_world'
+  IA_WORLD = 'ia_world',
+  VISUAL_STUDIO = 'visual_studio'
 }
 
 export interface ChatMessage {

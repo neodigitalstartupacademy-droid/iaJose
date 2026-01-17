@@ -7,22 +7,48 @@
     <title>Coach JOSÉ - AI Central Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              ndsa: {
+                blue: '#2563eb',
+                dark: '#0f172a',
+              },
+              neolife: {
+                green: '#16a34a',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
       :root {
         --ndsa-blue: #2563eb;
         --neolife-green: #16a34a;
         --synergy-gradient: linear-gradient(135deg, var(--ndsa-blue) 0%, var(--neolife-green) 100%);
       }
+      
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f1f5f9;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
+
       .glass-effect {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255, 255, 255, 0.4);
       }
+
+      .dark .glass-effect {
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
       .synergy-bg {
         background: var(--synergy-gradient);
       }
@@ -30,9 +56,6 @@
         background: var(--synergy-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-      }
-      .synergy-border {
-        border-image: var(--synergy-gradient) 1;
       }
       .custom-scrollbar::-webkit-scrollbar {
         width: 5px;
@@ -43,6 +66,9 @@
       .custom-scrollbar::-webkit-scrollbar-thumb {
         background: #cbd5e1;
         border-radius: 10px;
+      }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: var(--ndsa-blue);

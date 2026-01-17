@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, MessageSquare, Mic, Activity, Globe, Share2, GraduationCap, Layout, Zap } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Mic, Activity, Globe, Share2, GraduationCap, Layout, Zap, Wand2 } from 'lucide-react';
 import { AppView } from '../types';
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isOpen, isO
     { id: AppView.SOCIAL_SYNC, icon: <Share2 size={18} />, label: 'Social Sync' },
     { id: AppView.IA_WORLD, icon: <Globe size={18} />, label: 'IA World' },
     { id: AppView.CHAT, icon: <MessageSquare size={18} />, label: 'Coach JOSÉ IA' },
+    { id: AppView.VISUAL_STUDIO, icon: <Wand2 size={18} />, label: 'Studio Visuel' },
     { id: AppView.CELLULAR_CHECK, icon: <Activity size={18} />, label: 'Bilan Cellulaire' },
     { id: AppView.ACADEMY, icon: <GraduationCap size={18} />, label: 'Académie GMBC' },
     { id: AppView.LIVE, icon: <Mic size={18} />, label: 'Session Live' },
