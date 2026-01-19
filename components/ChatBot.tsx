@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, FileText, Paperclip, Download, Zap, Mic, MicOff, Volume2, Sparkles, X, Play, CircleStop, Waves, CheckCircle, Trash2, ShieldAlert, RefreshCcw, Stethoscope, Heart, Target, ScrollText, Activity, BrainCircuit, Globe, MapPin, ExternalLink, Brain, Loader2, Rocket, Pause, ShieldCheck, Stethoscope as MedIcon } from 'lucide-react';
+import { Send, FileText, Paperclip, Download, Zap, Mic, MicOff, Volume2, Sparkles, X, Play, CircleStop, Waves, CheckCircle, Trash2, ShieldAlert, RefreshCcw, Stethoscope, Heart, Target, ScrollText, Activity, BrainCircuit, Globe, MapPin, ExternalLink, Brain, Loader2, Rocket, Pause, ShieldCheck, Stethoscope as MedIcon, Info, Shield } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage, DistributorData, Language } from '../types';
 import { getAI, analyzeMedicalDocument, textToSpeech } from '../services/geminiService';
@@ -60,7 +60,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
   const activeVoiceId = VOICES.find(v => v.id === selectedVoice)?.id || "Charon";
   const activeVoiceLabel = VOICES.find(v => v.id === selectedVoice)?.name || "Souverain";
 
-  // Audio Progress Loop
   useEffect(() => {
     let interval: any;
     if (activeAudioIdx !== null) {
@@ -78,10 +77,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
   const QUICK_PROMPTS_LEFT = [
     { 
       label: t.medSpace, 
-      icon: <Stethoscope size={14} className="text-blue-400" />, 
-      text: language === Language.FR 
-        ? "Analysez ce cas clinique complexe sous l'angle de la nutrition cellulaire NeoLife. Comment les protocoles du SAB accompagnent-ils la médecine hospitalière ?" 
-        : "Analyze this complex clinical case through NeoLife cellular nutrition. How do SAB protocols support hospital medicine?"
+      icon: <MedIcon size={14} className="text-blue-400" />, 
+      text: "Réalisez une analyse approfondie d'un bilan sanguin selon les standards NeoLife SAB. Quels nutriments sont prioritaires pour une relance cellulaire ?"
     },
     { 
       label: t.visionBtn, 
@@ -94,18 +91,17 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
     { 
       label: t.duplication, 
       icon: <Target size={14} className="text-amber-500" />, 
-      text: language === Language.FR 
-        ? "Comment automatiser mon closing et ma duplication à 100% avec le système GMBC-OS ?" 
-        : "How to automate my closing and duplication at 100% with the GMBC-OS system?" 
+      text: "Comment automatiser ma duplication à 100% avec le système GMBC-OS ?" 
     },
     { label: t.liveBtn, icon: <Mic size={14} className="text-green-500" />, action: 'live' }
   ];
 
   const HEALTH_PRO_PROMPTS = [
-    { label: t.medSpace, icon: <MedIcon size={12} />, text: "Réalisez une analyse approfondie d'un bilan sanguin selon les standards NeoLife SAB." },
-    { label: t.interpretMedical, icon: <BrainCircuit size={12} />, text: "Interprétez ces données médicales via l'intelligence souveraine GMBC-OS pour identifier les carences cellulaires." },
-    { label: t.cellularProtocol, icon: <ShieldCheck size={12} />, text: "Proposez un protocole de nutrition cellulaire SAB adapté et complémentaire à un traitement de médecine conventionnelle." },
-    { label: t.vitalityAdvise, icon: <Heart size={12} />, text: "Quels sont vos meilleurs conseils de vitalité basés sur le Trio de Relance (Tre-en-en, Carotenoid, Salmon Oil Plus) ?" }
+    { label: t.analyzeBlood, icon: <Activity size={12} />, text: "Analyse d'un bilan sanguin via la science NeoLife SAB. Identifiez les carences cumulées." },
+    { label: t.interpretMedical, icon: <BrainCircuit size={12} />, text: "Interprétez cette analyse médicale. Quelles carences nutritionnelles ont favorisé ce malaise ?" },
+    { label: t.chronicDiseases, icon: <ShieldAlert size={12} className="text-red-500" />, text: "Établissez un protocole de nutrition cellulaire pour les maladies chroniques. Identifiez les carences cumulées en vitamines et minéraux responsables de la dégradation cellulaire." },
+    { label: t.cellularProtocol, icon: <ShieldCheck size={12} />, text: "Protocole nutritionnel cellulaire complémentaire à la médecine conventionnelle. Listez les carences à combler d'urgence." },
+    { label: t.vitalityAdvise, icon: <Heart size={12} />, text: "Conseils de vitalité basés sur le Trio de Relance pour contrer les carences structurelles." }
   ];
 
   useEffect(() => {
@@ -185,15 +181,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
                 liveSourcesRef.current.delete(source);
                 if (liveSourcesRef.current.size === 0) setIsSpeaking(false);
               };
-            }
-            if (msg.serverContent?.inputTranscription) setPartialTranscript(p => ({ ...p, user: msg.serverContent!.inputTranscription!.text }));
-            if (msg.serverContent?.outputTranscription) setPartialTranscript(p => ({ ...p, model: p.model + msg.serverContent!.outputTranscription!.text }));
-            if (msg.serverContent?.turnComplete) {
-              setMessages(prev => [...prev, 
-                { role: 'user', text: partialTranscript.user || "[Vocal]", timestamp: Date.now(), isLive: true },
-                { role: 'model', text: partialTranscript.model || "[Vocal Response]", timestamp: Date.now(), isLive: true }
-              ]);
-              setPartialTranscript({ user: '', model: '' });
             }
           }
         },
@@ -325,7 +312,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] synergy-bg opacity-10 blur-[120px] rounded-full animate-pulse pointer-events-none"></div>
            <button onClick={stopLiveMode} className="absolute top-8 right-8 p-5 bg-white/5 text-white rounded-full hover:bg-white/10 transition-all border border-white/10"><X size={24} /></button>
            <div className="flex flex-col items-center gap-10 relative z-10 w-full max-w-2xl text-center">
-              <div className={`w-48 h-48 rounded-full synergy-bg flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 shadow-[0_0_80px_rgba(37,99,235,0.4)]' : 'animate-bounce'}`}>
+              <div className={`w-48 h-48 rounded-full synergy-bg flex items-center justify-center text-white shadow-2xl transition-all duration-500 ${isSpeaking ? 'scale-110 shadow-[0_0_80px_rgba(37,99,235,0.4)]' : 'animate-wave'}`}>
                 {isSpeaking ? <Volume2 size={80} /> : <Mic size={80} />}
               </div>
               <div className="space-y-6 text-white w-full">
@@ -333,11 +320,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
                 <div className="min-h-[120px] p-8 bg-white/5 border border-white/10 rounded-[3rem] backdrop-blur-md shadow-2xl">
                   <p className="text-2xl font-black italic leading-tight text-slate-100">{partialTranscript.model || "..."}</p>
                 </div>
-              </div>
-              <div className="flex gap-2 h-16 items-center">
-                {[...Array(15)].map((_, i) => (
-                  <div key={i} className={`w-1.5 synergy-bg rounded-full transition-all duration-300 ${isSpeaking ? 'animate-wave h-full' : 'h-2 opacity-20'}`} style={{ animationDelay: `${i * 0.1}s` }} />
-                ))}
               </div>
            </div>
         </div>
@@ -367,63 +349,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
               </div>
               <div className={`p-8 md:p-10 rounded-[3rem] text-[18px] font-medium leading-relaxed shadow-sm transition-all duration-300 ${msg.role === 'user' ? 'bg-slate-900 text-white border border-slate-800 shadow-xl' : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-100 dark:border-slate-800 shadow-2xl'}`}>
                 <ReactMarkdown className="prose prose-slate dark:prose-invert max-w-none prose-lg">{msg.text}</ReactMarkdown>
-                
-                {msg.sources && (
-                  <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-3">
-                    {msg.sources.map((src, si) => (
-                      <a key={si} href={src.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-[10px] font-black text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 uppercase tracking-widest transition-all group">
-                        {src.uri?.includes('google.com/maps') ? <MapPin size={14} className="text-red-500" /> : <Globe size={14} className="text-blue-500" />}
-                        <span className="truncate max-w-[150px]">{src.title || "Source"}</span>
-                        <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </a>
-                    ))}
-                  </div>
-                )}
-
-                {msg.role === 'model' && msg.text && !msg.isLive && (
-                  <div className="mt-8 pt-6 border-t border-slate-50 dark:border-slate-800 space-y-4">
-                    <div className="flex gap-6">
-                      <button 
-                        onClick={() => handlePlayVoice(msg.text, idx)} 
-                        disabled={isTtsLoading === idx}
-                        className="flex items-center gap-3 text-[11px] font-black text-blue-600 dark:text-blue-400 hover:text-blue-800 uppercase tracking-widest transition-all disabled:opacity-50"
-                      >
-                        {isTtsLoading === idx ? <Loader2 className="animate-spin" size={16} /> : (activeAudioIdx === idx && audioProgress.isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />)}
-                        VOIX {brandName.toUpperCase()}
-                      </button>
-                      <button onClick={() => navigator.clipboard.writeText(msg.text)} className="flex items-center gap-3 text-[11px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-all">
-                        <Download size={16} /> {t.copy}
-                      </button>
-                    </div>
-
-                    {/* Audio Player UI */}
-                    {activeAudioIdx === idx && (
-                      <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl animate-in slide-in-from-top-2">
-                        <div className="flex items-center justify-between mb-3 text-[10px] font-black text-slate-400">
-                          <span>{formatTime(audioProgress.position)}</span>
-                          <span>{formatTime(audioProgress.duration)}</span>
-                        </div>
-                        <div 
-                          className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full cursor-pointer relative group"
-                          onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const percent = (e.clientX - rect.left) / rect.width;
-                            seekAudio(percent);
-                          }}
-                        >
-                          <div 
-                            className="absolute inset-y-0 left-0 synergy-bg rounded-full transition-all duration-75"
-                            style={{ width: `${(audioProgress.position / audioProgress.duration) * 100}%` }}
-                          />
-                          <div 
-                            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                            style={{ left: `${(audioProgress.position / audioProgress.duration) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -444,8 +369,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
       {/* Cockpit Trident Interface */}
       <div className="p-6 md:px-10 md:py-8 bg-slate-950 dark:bg-black border-t border-slate-900 shadow-[0_-20px_60px_rgba(0,0,0,0.5)] relative z-20">
         <div className="max-w-[1500px] mx-auto flex flex-col items-center gap-8">
+          
           <div className="w-full flex flex-col lg:flex-row items-center gap-8">
-            {/* Left Wing - Visionary Prompts */}
+            {/* Left Wing */}
             <div className="hidden lg:flex flex-col gap-3 w-[280px] shrink-0">
               {QUICK_PROMPTS_LEFT.map((p, i) => (
                 <button key={i} onClick={() => handleSend(p.text)} className="px-5 py-4 bg-slate-900/50 border border-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-4 group">
@@ -455,7 +381,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
               ))}
             </div>
 
-            {/* Center Console - Input */}
+            {/* Center Console */}
             <div className="flex-1 w-full flex flex-col gap-6">
               <div className={`relative flex items-end gap-4 bg-black border-2 ${useThinking ? 'border-blue-500 ring-8 ring-blue-500/5 shadow-[0_0_40px_rgba(37,99,235,0.1)]' : 'border-slate-800'} rounded-[3rem] p-5 transition-all duration-500 shadow-2xl focus-within:border-blue-600`}>
                 <button onClick={() => setShowVoicePicker(true)} className="p-3 text-slate-500 hover:text-blue-400 transition-all shrink-0 flex flex-col items-center gap-1 group">
@@ -500,7 +426,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
               </div>
             </div>
 
-            {/* Right Wing - Business & Live */}
+            {/* Right Wing */}
             <div className="hidden lg:flex flex-col gap-3 w-[280px] shrink-0">
               {QUICK_PROMPTS_RIGHT.map((p, i) => (
                 <button key={i} onClick={() => p.action === 'live' ? startLiveMode() : handleSend(p.text)} className={`px-5 py-4 bg-slate-900/50 border border-slate-800 text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-500 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-4 group ${p.action === 'live' ? 'border-green-500/30 ring-1 ring-green-500/10' : ''}`}>
@@ -511,6 +437,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
             </div>
           </div>
           
+          <div className="flex items-center gap-2 text-[10px] text-slate-700 font-bold uppercase tracking-widest opacity-40">
+            <Shield size={12} className="text-blue-500" />
+            Analyse basée sur la science SAB NeoLife. Ne remplace pas un diagnostic hospitalier.
+          </div>
+
           {attachment && (
             <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] px-6 py-2 rounded-full font-black flex items-center gap-3 animate-in slide-in-from-bottom-2 shadow-xl border border-white/20">
               <FileText size={14} /> {attachment.name} <X size={12} className="cursor-pointer hover:scale-125 transition-all" onClick={() => setAttachment(null)} />
@@ -518,38 +449,6 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
           )}
         </div>
       </div>
-
-      {/* Reset Confirmation Overlay */}
-      {showResetConfirm && (
-        <div className="absolute inset-0 z-[100] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-10 animate-in fade-in">
-           <div className="bg-white dark:bg-slate-900 rounded-[4rem] p-16 max-w-xl w-full text-center border-4 border-slate-50 dark:border-slate-800 shadow-[0_60px_120px_rgba(0,0,0,0.5)]">
-              <ShieldAlert size={80} className="text-red-600 mx-auto mb-10 animate-bounce" />
-              <h3 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-6">{t.resetMemory}</h3>
-              <div className="grid grid-cols-2 gap-6">
-                 <button onClick={() => setShowResetConfirm(false)} className="py-7 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-slate-200 transition-all">{t.cancel}</button>
-                 <button onClick={() => { setMessages([{ role: 'model', text: t.welcome.replace('Coach JOSÉ', brandName), timestamp: Date.now() }]); setShowResetConfirm(false); }} className="py-7 bg-red-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl hover:bg-red-700 transition-all">{t.confirm}</button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* Voice Selection Panel */}
-      {showVoicePicker && (
-        <div className="absolute bottom-[180px] left-10 right-10 md:left-[25%] md:right-[25%] bg-slate-950 border border-white/5 rounded-[4rem] p-12 shadow-[0_60px_160px_rgba(0,0,0,0.8)] z-[70] animate-in slide-in-from-bottom-10">
-          <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-8 text-white">
-            <h4 className="text-[12px] font-black uppercase tracking-[0.5em]">{t.lang}</h4>
-            <button onClick={() => setShowVoicePicker(false)} className="p-4 bg-white/5 rounded-full hover:bg-white/10"><X size={24} /></button>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            {VOICES.map((v) => (
-              <button key={v.id} onClick={() => { setSelectedVoice(v.id); setShowVoicePicker(false); }} className={`flex flex-col text-left p-8 rounded-[3rem] border-2 transition-all duration-300 ${selectedVoice === v.id ? 'bg-blue-600 border-blue-400 text-white shadow-2xl scale-105' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10 hover:border-white/10'}`}>
-                <span className="text-xl font-black uppercase tracking-tight mb-2">{v.name}</span>
-                <span className="text-[10px] opacity-60 font-bold uppercase tracking-widest">{v.description}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

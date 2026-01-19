@@ -81,32 +81,3 @@ export const generateImage = async (prompt: string, aspectRatio: string = "1:1",
   }
   throw new Error("No image data returned from model");
 };
-
-export const generateVideo = async (prompt: string, aspectRatio: '16:9' | '9:16' = '16:9') => {
-  if (!(await (window as any).aistudio.hasSelectedApiKey())) {
-    await (window as any).aistudio.openSelectKey();
-  }
-
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  let operation = await ai.models.generateVideos({
-    model: MODELS.VIDEO,
-    prompt: prompt,
-    config: {
-      numberOfVideos: 1,
-      resolution: '720p',
-      aspectRatio: aspectRatio
-    }
-  });
-
-  while (!operation.done) {
-    await new Promise(resolve => setTimeout(resolve, 10000));
-    operation = await ai.operations.getVideosOperation({ operation: operation });
-  }
-
-  const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-  if (!downloadLink) throw new Error("Video generation failed");
-  
-  const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-};
