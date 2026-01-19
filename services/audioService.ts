@@ -1,8 +1,12 @@
 
-let currentSource: AudioBufferSourceNode | null = null;
 let currentContext: AudioContext | null = null;
+let currentBuffer: AudioBuffer | null = null;
+let currentSource: AudioBufferSourceNode | null = null;
 let currentGainNode: GainNode | null = null;
+let startTime: number = 0;
+let pausedAt: number = 0;
 let currentVolume: number = 1.0;
+let isPlaying: boolean = false;
 
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
@@ -36,17 +40,79 @@ export const stopAllAudio = () => {
   if (currentSource) {
     try {
       currentSource.stop();
-    } catch (e) {
-      // Ignorer si déjà arrêté
-    }
+    } catch (e) {}
     currentSource = null;
+  }
+  isPlaying = false;
+  pausedAt = 0;
+  startTime = 0;
+};
+
+export const pauseAudio = () => {
+  if (isPlaying && currentContext && currentSource) {
+    try {
+      currentSource.stop();
+      // FIX: Ensure pausedAt is never negative
+      pausedAt = Math.max(0, currentContext.currentTime - startTime);
+    } catch (e) {
+      console.error("Pause error:", e);
+    }
+    isPlaying = false;
   }
 };
 
-export const setAudioVolume = (volume: number) => {
-  currentVolume = volume;
-  if (currentGainNode) {
-    currentGainNode.gain.setTargetAtTime(volume, currentContext!.currentTime, 0.05);
+export const resumeAudio = () => {
+  if (!isPlaying && currentBuffer) {
+    playFrom(pausedAt);
+  }
+};
+
+export const seekAudio = (percent: number) => {
+  if (currentBuffer) {
+    const position = currentBuffer.duration * percent;
+    playFrom(position);
+  }
+};
+
+const playFrom = (position: number) => {
+  if (!currentContext || !currentBuffer) return;
+
+  // FIX: Force context resume if it was suspended by the browser
+  if (currentContext.state === 'suspended') {
+    currentContext.resume();
+  }
+
+  if (currentSource) {
+    try { currentSource.stop(); } catch(e) {}
+  }
+
+  const source = currentContext.createBufferSource();
+  const gainNode = currentContext.createGain();
+  
+  source.buffer = currentBuffer;
+  gainNode.gain.value = currentVolume;
+  
+  source.connect(gainNode);
+  gainNode.connect(currentContext.destination);
+  
+  // FIX: Ensure offset is positive and within bounds
+  const safeOffset = Math.max(0, Math.min(position, currentBuffer.duration - 0.001));
+  
+  try {
+    source.start(0, safeOffset);
+    currentSource = source;
+    currentGainNode = gainNode;
+    startTime = currentContext.currentTime - safeOffset;
+    isPlaying = true;
+
+    source.onended = () => {
+      if (currentContext && (currentContext.currentTime - startTime) >= currentBuffer!.duration - 0.01) {
+        isPlaying = false;
+        pausedAt = 0;
+      }
+    };
+  } catch (err) {
+    console.error("Audio Start Error:", err);
   }
 };
 
@@ -63,25 +129,27 @@ export const playPcmAudio = async (base64Audio: string) => {
     }
 
     const bytes = decodeBase64(base64Audio);
-    const audioBuffer = await decodePcmData(bytes, currentContext, 24000, 1);
+    currentBuffer = await decodePcmData(bytes, currentContext, 24000, 1);
     
-    const source = currentContext.createBufferSource();
-    const gainNode = currentContext.createGain();
+    playFrom(0);
     
-    source.buffer = audioBuffer;
-    gainNode.gain.value = currentVolume;
-    
-    source.connect(gainNode);
-    gainNode.connect(currentContext.destination);
-    
-    source.start();
-    
-    currentSource = source;
-    currentGainNode = gainNode;
-    
-    return source;
+    return {
+      duration: currentBuffer.duration,
+      getContext: () => currentContext,
+      getStartTime: () => startTime
+    };
   } catch (error) {
     console.error("Erreur lors de la lecture audio:", error);
     return null;
   }
 };
+
+export const getAudioState = () => {
+  if (!currentContext || !currentBuffer) return { position: 0, duration: 0, isPlaying: false };
+  const position = isPlaying ? Math.max(0, currentContext.currentTime - startTime) : pausedAt;
+  return {
+    position: Math.min(position, currentBuffer.duration),
+    duration: currentBuffer.duration,
+    isPlaying
+  };
+}

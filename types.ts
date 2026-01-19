@@ -11,6 +11,13 @@ export enum AppView {
   VISUAL_STUDIO = 'visual_studio'
 }
 
+export enum Language {
+  FR = 'fr',
+  EN = 'en',
+  ES = 'es',
+  PT = 'pt'
+}
+
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;

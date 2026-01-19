@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, MessageSquare, Mic, Activity, ShieldCheck, LogOut, Zap, Menu, X, Sun, Moon } from 'lucide-react';
-import { AppView, DistributorData, UserAccount } from './types';
+import { LayoutDashboard, MessageSquare, Mic, Activity, ShieldCheck, LogOut, Zap, Menu, X, Sun, Moon, Globe } from 'lucide-react';
+import { AppView, DistributorData, UserAccount, Language } from './types';
 import Dashboard from './components/Dashboard';
 import ChatBot from './components/ChatBot';
 import LiveSession from './components/LiveSession';
@@ -14,10 +14,15 @@ import VisualStudio from './components/VisualStudio';
 import Sidebar from './components/Sidebar';
 import Auth from './components/Auth';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK, FOUNDER_EMAIL } from './constants';
+import { translations } from './translations';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>(AppView.DASHBOARD);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem('jose_language');
+    return (saved as Language) || Language.FR;
+  });
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('jose_theme');
     return (saved as 'light' | 'dark') || 'light';
@@ -28,10 +33,21 @@ const App: React.FC = () => {
   });
   const [isOwner, setIsOwner] = useState(false);
   const [initialIntent, setInitialIntent] = useState<string | null>(null);
+  const [isLangOpen, setIsLangOpen] = useState(false);
+
+  const t = translations[language];
 
   useEffect(() => {
     if (currentUser) {
       setIsOwner(currentUser.distData.id === JOSE_ID || currentUser.email === FOUNDER_EMAIL);
+      
+      // Inject Dynamic Branding Colors
+      const branding = currentUser.distData.branding;
+      if (branding?.primaryColor) {
+        document.documentElement.style.setProperty('--ndsa-blue', branding.primaryColor);
+      } else {
+        document.documentElement.style.setProperty('--ndsa-blue', '#2563eb');
+      }
     }
   }, [currentUser]);
 
@@ -44,6 +60,10 @@ const App: React.FC = () => {
     }
     localStorage.setItem('jose_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('jose_language', language);
+  }, [language]);
 
   const handleLogin = (user: UserAccount) => {
     setCurrentUser(user);
@@ -67,11 +87,25 @@ const App: React.FC = () => {
     }
   };
 
+  const refreshUser = () => {
+    const saved = localStorage.getItem('jose_current_user');
+    if (saved) setCurrentUser(JSON.parse(saved));
+  };
+
   if (!currentUser) return <Auth onLogin={handleLogin} />;
+
+  const currentBrandName = currentUser.distData.branding?.name || t.appName;
 
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-      <Sidebar activeView={activeView} onViewChange={handleViewChange} isOpen={isSidebarOpen} isOwner={isOwner} />
+      <Sidebar 
+        activeView={activeView} 
+        onViewChange={handleViewChange} 
+        isOpen={isSidebarOpen} 
+        isOwner={isOwner} 
+        language={language}
+        brandName={currentBrandName}
+      />
 
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         <header className={`h-20 border-b flex items-center justify-between px-6 shrink-0 transition-colors duration-300 ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
@@ -80,11 +114,41 @@ const App: React.FC = () => {
               <Menu size={20} />
             </button>
             <h2 className="text-xl font-black tracking-tighter uppercase flex items-center gap-3">
-              {activeView.replace('_', ' ')} 
+              {t[activeView as keyof typeof t] || activeView.replace('_', ' ')} 
               {isOwner && <span className="px-3 py-1 bg-blue-500/10 text-blue-500 text-[10px] rounded-full">SOUVERAIN</span>}
             </h2>
           </div>
           <div className="flex items-center gap-4">
+            {/* Language Selector */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsLangOpen(!isLangOpen)}
+                className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-all flex items-center gap-2"
+              >
+                <Globe size={20} />
+                <span className="text-[10px] font-black uppercase">{language}</span>
+              </button>
+              {isLangOpen && (
+                <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-in slide-in-from-top-2">
+                  {[
+                    { id: Language.FR, label: 'FR', flag: '🇫🇷' },
+                    { id: Language.EN, label: 'EN', flag: '🇬🇧' },
+                    { id: Language.ES, label: 'ES', flag: '🇪🇸' },
+                    { id: Language.PT, label: 'PT', flag: '🇵🇹' }
+                  ].map(lang => (
+                    <button 
+                      key={lang.id}
+                      onClick={() => { setLanguage(lang.id); setIsLangOpen(false); }}
+                      className={`w-full px-4 py-3 text-left text-[10px] font-black hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center justify-between ${language === lang.id ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-500'}`}
+                    >
+                      <span>{lang.flag} {lang.label}</span>
+                      {language === lang.id && <Zap size={10} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={toggleTheme}
               className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-all"
@@ -99,15 +163,15 @@ const App: React.FC = () => {
         </header>
 
         <section className="flex-1 overflow-y-auto custom-scrollbar">
-          {activeView === AppView.DASHBOARD && <Dashboard onViewChange={handleViewChange} isOwner={isOwner} distData={currentUser.distData} />}
-          {activeView === AppView.CHAT && <ChatBot distData={currentUser.distData} isOwner={isOwner} initialIntent={initialIntent} />}
-          {activeView === AppView.IA_WORLD && <IAWorld />}
-          {activeView === AppView.LIVE && <LiveSession isOwner={isOwner} />}
-          {activeView === AppView.CELLULAR_CHECK && <CellularCheck onViewChange={handleViewChange} onSetIntent={setInitialIntent} />}
-          {activeView === AppView.ACADEMY && <Academy />}
-          {activeView === AppView.CONTROL_TOWER && <ControlTower />}
-          {activeView === AppView.SOCIAL_SYNC && <SocialSync distId={currentUser.distData.id} shopUrl={currentUser.distData.shopUrl} />}
-          {activeView === AppView.VISUAL_STUDIO && <VisualStudio />}
+          {activeView === AppView.DASHBOARD && <Dashboard onViewChange={handleViewChange} isOwner={isOwner} distData={currentUser.distData} language={language} />}
+          {activeView === AppView.CHAT && <ChatBot distData={currentUser.distData} isOwner={isOwner} initialIntent={initialIntent} language={language} />}
+          {activeView === AppView.IA_WORLD && <IAWorld language={language} />}
+          {activeView === AppView.LIVE && <LiveSession isOwner={isOwner} language={language} />}
+          {activeView === AppView.CELLULAR_CHECK && <CellularCheck onViewChange={handleViewChange} onSetIntent={setInitialIntent} language={language} />}
+          {activeView === AppView.ACADEMY && <Academy language={language} />}
+          {activeView === AppView.CONTROL_TOWER && <ControlTower language={language} onUpdateBranding={refreshUser} />}
+          {activeView === AppView.SOCIAL_SYNC && <SocialSync distId={currentUser.distData.id} shopUrl={currentUser.distData.shopUrl} language={language} />}
+          {activeView === AppView.VISUAL_STUDIO && <VisualStudio language={language} />}
         </section>
       </main>
     </div>
