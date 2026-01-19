@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, FileText, Paperclip, X, Activity, Brain, ShieldCheck, Stethoscope as MedIcon, ScrollText, Target, Sparkles, Trash2, History, Volume2, ChevronDown, Microscope, Play, Info, Beaker, GraduationCap, Pill, Thermometer, FlaskConical, Search, FileSearch, ClipboardList, Zap, PlusCircle, LayoutGrid, HeartPulse } from 'lucide-react';
+/* Added Layers and Flame to the imports to fix missing icon errors */
+import { Send, FileText, Paperclip, X, Activity, Brain, ShieldCheck, Stethoscope as MedIcon, ScrollText, Target, Sparkles, Trash2, History, Volume2, ChevronDown, Microscope, Play, Info, Beaker, GraduationCap, Pill, Thermometer, FlaskConical, Search, FileSearch, ClipboardList, Zap, PlusCircle, LayoutGrid, HeartPulse, Lightbulb, ArrowRight, Layers, Flame } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage, DistributorData, Language } from '../types';
 import { getAI, analyzeMedicalDocument, textToSpeech } from '../services/geminiService';
@@ -38,6 +39,13 @@ const MEDICAL_RESEARCH_CENTRES = [
   { id: 'gastro', label: 'Gastro', icon: <Pill size={16} />, prompt: "Analyse barrière intestinale.", scenarios: ["Microbiote", "Leaky Gut", "Reflux"] },
   { id: 'gyn', label: 'Gynéco', icon: <ShieldCheck size={16} />, prompt: "Analyse équilibre hormonal.", scenarios: ["Ménopause", "Fertilité", "Cycle"] },
   { id: 'onco', label: 'Onco-Soutien', icon: <Microscope size={16} />, prompt: "Soutien terrain oncologie.", scenarios: ["Chimio-soutien", "Relance Immunité"] }
+];
+
+const CONTEXT_SUGGESTIONS = [
+    { label: "Expliquer la Membrane Cellulaire", icon: <Layers size={14} />, prompt: "Explique-moi l'importance de la membrane cellulaire et le rôle du Tre-en-en." },
+    { label: "Protocole Anti-Inflammatoire", icon: <Flame size={14} />, prompt: "Quel est le protocole NeoLife pour réduire l'inflammation systémique ?" },
+    { label: "Comment Dupliquer avec JOSÉ ?", icon: <Zap size={14} />, prompt: "Comment utiliser Coach JOSÉ pour parrainer de nouveaux partenaires efficacement ?" },
+    { label: "Analyse de Terrain vs Diagnostic", icon: <ShieldCheck size={14} />, prompt: "Quelle est la différence entre un diagnostic hospitalier et une analyse de terrain cellulaire ?" }
 ];
 
 const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, language }) => {
@@ -176,10 +184,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
                         <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest italic tracking-tighter">Science Cellulaire SAB v4.5</p>
                     </div>
                   </div>
-                  <button onClick={() => handleVoiceRead(msg.text, idx)} className={`p-2.5 rounded-xl transition-all flex items-center gap-2 ${readingIdx === idx ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-blue-600'}`}>
-                    <Volume2 size={16} />
-                    <span className="text-[9px] font-black uppercase tracking-widest hidden md:block">{readingIdx === idx ? "SYNTHÈSE..." : "ÉCOUTER"}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => handleVoiceRead(msg.text, idx)} className={`p-2.5 rounded-xl transition-all flex items-center gap-2 ${readingIdx === idx ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-blue-600'}`}>
+                        <Volume2 size={16} />
+                        <span className="text-[9px] font-black uppercase tracking-widest hidden md:block">{readingIdx === idx ? "SYNTHÈSE..." : "ÉCOUTER"}</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -201,9 +211,28 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
              <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-400 italic">Croisement des données Nexus...</p>
           </div>
         )}
+
+        {/* 💡 SUGGESTIONS AREA - Appearing when idle */}
+        {!isLoading && messages.length > 0 && messages[messages.length-1].role === 'model' && (
+            <div className="pt-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                <div className="flex items-center gap-4 mb-8 opacity-50">
+                    <div className="h-px flex-1 bg-slate-100 dark:bg-slate-900"></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 flex items-center gap-2"><Lightbulb size={12} className="text-amber-500" /> Pistes d'approfondissement</span>
+                    <div className="h-px flex-1 bg-slate-100 dark:bg-slate-900"></div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {CONTEXT_SUGGESTIONS.map((s, i) => (
+                        <button key={i} onClick={() => handleSend(s.prompt)} className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900/50 hover:bg-blue-600 hover:text-white rounded-2xl border border-slate-100 dark:border-slate-800 transition-all group shadow-sm">
+                            <span className="text-xs font-bold text-left leading-tight group-hover:text-white">{s.label}</span>
+                            <ArrowRight size={14} className="opacity-20 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+                        </button>
+                    ))}
+                </div>
+            </div>
+        )}
       </div>
 
-      {/* 🧭 CONTEXTUAL TRAY - Suggested scenarios */}
+      {/* 🧭 CONTEXTUAL TRAY - Specialty specific scenarios */}
       {activeSpecialty && !isLoading && (
          <div className="px-6 md:px-[20%] py-4 flex flex-wrap gap-2 justify-center animate-in slide-in-from-bottom-6 z-10 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mr-2"><Search size={12}/> SCÉNARIOS CLINIQUES :</span>
@@ -215,11 +244,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
          </div>
       )}
 
-      {/* 🕹️ SATELLITE COCKPIT - Ergonomic Command Bar */}
+      {/* 🕹️ SATELLITE COCKPIT - Fully Labeled Ergonomic Command Center */}
       <div className="px-6 md:px-[8%] lg:px-[12%] pb-10 pt-6 bg-white dark:bg-slate-950 border-t border-slate-50 dark:border-slate-900 shadow-[0_-20px_50px_rgba(0,0,0,0.02)] shrink-0">
         <div className="max-w-7xl mx-auto flex items-end gap-5">
           
-          {/* 📍 LEFT SATELLITE: Professional Tools (Healthcare/Hospital) */}
+          {/* 📍 LEFT SATELLITE: Professional Nav */}
           <div className="flex items-center gap-4 mb-2">
              <div className="relative flex flex-col items-center group">
                 <button 
@@ -231,7 +260,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
                 <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Espace Corps<br/>Hospitaliers</span>
                 
                 {showMedMenu && (
-                    <div className="absolute bottom-full left-0 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-8 shadow-[0_40px_80px_rgba(0,0,0,0.3)] w-[320px] md:w-[600px] grid grid-cols-2 md:grid-cols-3 gap-3 animate-in slide-in-from-bottom-4 z-50">
+                    <div className="absolute bottom-full left-0 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-[0_40px_80px_rgba(0,0,0,0.3)] w-[320px] md:w-[600px] grid grid-cols-2 md:grid-cols-3 gap-3 animate-in slide-in-from-bottom-4 z-50">
                         <div className="col-span-full mb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b pb-4 flex items-center justify-between">
                             <span className="flex items-center gap-3"><HeartPulse size={14} /> ESPACE CORPS HOSPITALIERS</span>
                             <Info size={12} className="text-blue-500" />
@@ -256,10 +285,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
                 <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Maladies<br/>Chroniques</span>
                 
                 {showChronicMenu && (
-                    <div className="absolute bottom-full left-0 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-8 shadow-[0_40px_80px_rgba(0,0,0,0.3)] w-[300px] md:w-[450px] grid grid-cols-2 gap-3 animate-in slide-in-from-bottom-4 z-50">
-                         <div className="col-span-full mb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b pb-4">PROTOCOLES PATHOLOGIES</div>
+                    <div className="absolute bottom-full left-0 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-[0_40px_80px_rgba(0,0,0,0.3)] w-[300px] md:w-[450px] grid grid-cols-2 gap-3 animate-in slide-in-from-bottom-4 z-50">
+                         <div className="col-span-full mb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b pb-4 text-center">ANALYSE TERRAIN CELLULAIRE</div>
                          {CHRONIC_LIST.map(c => (
-                            <button key={c.id} onClick={() => handleSend(`Analyse terrain pour pathologie : ${c.label}.`)} className="flex items-center gap-5 p-5 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-xl transition-all">
+                            <button key={c.id} onClick={() => handleSend(`Protocole spécifique NeoLife pour : ${c.label}.`)} className="flex items-center gap-5 p-5 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-xl transition-all">
                                 <span className="text-3xl">{c.icon}</span>
                                 <span className="text-[10px] font-black uppercase tracking-tighter">{c.label}</span>
                             </button>
@@ -296,7 +325,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
             )}
           </div>
 
-          {/* ⚙️ RIGHT SATELLITE: AI Brain & Send (with labels) */}
+          {/* ⚙️ RIGHT SATELLITE: AI Brain & Send */}
           <div className="flex items-center gap-4 mb-2">
              <div className="flex flex-col items-center group">
                 <button 
@@ -321,7 +350,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
           </div>
         </div>
 
-        {/* 📋 COCKPIT FOOTER - Global orientation */}
+        {/* 📋 COCKPIT FOOTER - Metadata & Reports */}
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between mt-10 px-10 border-t border-slate-50 dark:border-slate-900/50 pt-8 gap-6">
             <div className="flex items-center gap-8 text-[10px] text-slate-400 dark:text-slate-700 font-black uppercase tracking-[0.4em]">
                 <div className="flex items-center gap-3 text-blue-500/80"><Info size={14} /> CLINICAL OS v4.5</div>
@@ -339,18 +368,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
         </div>
       </div>
 
-      {/* 🏥 Active Context Badge (Header Overlay) */}
+      {/* 🏥 Active Context Badge (Floating Header Overlay) */}
       {activeSpecialty && (
         <div className="absolute top-12 left-1/2 -translate-x-1/2 px-10 py-4 bg-slate-950/90 backdrop-blur-md text-white rounded-full shadow-[0_40px_100px_rgba(37,99,235,0.5)] border-2 border-blue-500/50 flex items-center gap-5 animate-in slide-in-from-top-12 duration-700 z-50">
             <div className="w-10 h-10 rounded-xl synergy-bg flex items-center justify-center border border-white/10 shadow-lg">
                 {activeSpecialty.icon}
             </div>
-            <span className="text-[11px] font-black uppercase tracking-[0.5em]">MODE ACTIF : {activeSpecialty.label}</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.5em]">SPÉCIALITÉ : {activeSpecialty.label}</span>
             <button onClick={() => setActiveSpecialty(null)} className="ml-6 p-1 hover:text-red-500 transition-colors"><X size={20} /></button>
         </div>
       )}
 
-      {/* 📎 Attachment Badge (Floating) */}
+      {/* 📎 Attachment Badge (Floating Overlay) */}
       {attachment && (
         <div className="absolute bottom-48 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] px-10 py-4 rounded-full font-black flex items-center gap-6 shadow-2xl border border-white/20 animate-in slide-in-from-bottom-12 z-50">
           <FileSearch size={20} className="animate-pulse" /> {attachment.name.toUpperCase()} <X size={16} className="cursor-pointer ml-6 hover:rotate-90 transition-all" onClick={() => setAttachment(null)} />
