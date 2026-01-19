@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-// Added ShieldCheck to the imports below
-import { Activity, MessageSquare, Shield, ShieldCheck, Users, ArrowRight, Link, Copy, Check, Clock, Crown, TrendingUp, Share2, BarChart3, Target, MousePointer2, Info, UserPlus, ShoppingCart, Zap, UserCheck, AlertCircle, Sparkles, Heart, Loader2, XCircle, CheckCircle2, Save, Globe, Wand2, ShieldAlert } from 'lucide-react';
+import { Activity, MessageSquare, Shield, ShieldCheck, Users, ArrowRight, Link, Copy, Check, Clock, Crown, TrendingUp, Share2, BarChart3, Target, MousePointer2, Info, UserPlus, ShoppingCart, Zap, UserCheck, AlertCircle, Sparkles, Heart, Loader2, XCircle, CheckCircle2, Save, Globe, Wand2, ShieldAlert, ScrollText } from 'lucide-react';
 import { AppView, DistributorData, UserAccount, Language } from '../types';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK } from '../constants';
 import { translations } from '../translations';
@@ -15,8 +14,18 @@ interface DashboardProps {
 
 type AliasStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
 
+const WISDOM_NUGGETS = [
+  "La santé ne commence pas dans l'assiette, mais dans l'état intérieur.",
+  "Un patient guéri est un client perdu : brisez la matrice de la maladie.",
+  "Le vieillissement n'est pas une maladie, mais un épuisement de nutriments.",
+  "Vos cellules ne demandent pas des pilules, elles demandent de la vie.",
+  "La Médecine du Futur est la nutrition cellulaire de précision.",
+  "Le Smart Link est votre arme de duplication massive."
+];
+
 const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData, language }) => {
   const t = translations[language];
+  const [wisdomIdx, setWisdomIdx] = useState(0);
   const [copied, setCopied] = useState<'smart' | 'direct' | null>(null);
   const [customId, setCustomId] = useState(distData?.id || '');
   const [customShop, setCustomShop] = useState(distData?.shopUrl || '');
@@ -35,6 +44,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData, 
     if (alias && aliasStatus === 'available') params.set('alias', alias.toLowerCase().trim());
     return `${baseUrl}?${params.toString()}`;
   }, [customId, cleanShopUrl, alias, aliasStatus]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWisdomIdx(prev => (prev + 1) % WISDOM_NUGGETS.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!alias.trim()) { setAliasStatus('idle'); return; }
@@ -62,6 +78,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData, 
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700 pb-20 px-4 pt-10">
+      {/* Wisdom Ticker */}
+      <div className="bg-blue-600/10 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-900/30 rounded-2xl p-4 overflow-hidden relative group">
+         <div className="flex items-center gap-4 animate-in slide-in-from-right duration-1000" key={wisdomIdx}>
+            <ScrollText size={18} className="text-blue-600 shrink-0" />
+            <p className="text-sm font-bold text-slate-700 dark:text-blue-300 italic">
+               "{WISDOM_NUGGETS[wisdomIdx]}"
+            </p>
+         </div>
+         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-500/40 uppercase tracking-widest hidden md:block">NDSA ARCHIVES</div>
+      </div>
+
       <div className={`relative overflow-hidden rounded-[2.5rem] p-10 lg:p-16 text-white shadow-2xl group`}>
         <div className="absolute inset-0 synergy-bg transition-transform duration-700 group-hover:scale-105"></div>
         <div className="absolute inset-0 bg-black/20"></div>

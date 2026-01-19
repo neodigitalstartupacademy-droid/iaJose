@@ -43,7 +43,10 @@ export const translations = {
     conversion: "Conversion",
     vitality: "Vitalité",
     rank: "Rang",
-    vision1958: "Analysez pourquoi GMBC-OS est l'outil attendu depuis 1958 pour mettre fin à la douleur des distributeurs et comment il crée la Médecine du Futur."
+    vision1958: "Analysez pourquoi GMBC-OS est l'outil attendu depuis 1958 pour mettre fin à la douleur des distributeurs et comment il crée la Médecine du Futur.",
+    wisdomTitle: "Nuggets de Sagesse",
+    qrLabel: "Générer QR Code",
+    legalDisclaimer: "Analyse basée sur la science SAB NeoLife. Ne remplace pas un diagnostic hospitalier."
   },
   [Language.EN]: {
     appName: "Coach JOSE",
@@ -86,7 +89,10 @@ export const translations = {
     conversion: "Conversion",
     vitality: "Vitality",
     rank: "Rank",
-    vision1958: "Analyze why GMBC-OS is the tool awaited since 1958 to end distributor pain and how it creates the Medicine of the Future."
+    vision1958: "Analyze why GMBC-OS is the tool awaited since 1958 to end distributor pain and how it creates the Medicine of the Future.",
+    wisdomTitle: "Wisdom Nuggets",
+    qrLabel: "Generate QR Code",
+    legalDisclaimer: "Analysis based on SAB NeoLife science. Does not replace hospital diagnosis."
   },
   [Language.ES]: {
     appName: "Coach JOSÉ",
@@ -101,7 +107,7 @@ export const translations = {
     live: "Sesión en Vivo",
     control: "Torre de Control",
     welcome: "Sistema Soberano activado. Soy el Coach JOSÉ, su arquitecto de crecimiento celular y empresarial. ¿Cómo transformaremos su vitalidad hoy?",
-    inputPlaceholder: "Comande la inteligencia de JOSÉ...",
+    inputPlaceholder: "Comande la intelligence de JOSÉ...",
     thinkingOn: "REFLEXIÓN ON",
     thinkingOff: "REFLEXIÓN OFF",
     medSpace: "Espacio Médicos/Doctores",
@@ -113,7 +119,7 @@ export const translations = {
     visionBtn: "¿Qué es NeoLife / GMBC-OS?",
     duplication: "Duplicación NDSA",
     liveBtn: "Live Vocal",
-    copy: "COPIAR",
+    copy: "COPIER",
     voiceJose: "VOZ JOSÉ",
     resetMemory: "¿Borrar memoria?",
     cancel: "CANCELAR",
@@ -129,7 +135,10 @@ export const translations = {
     conversion: "Conversión",
     vitality: "Vitalidad",
     rank: "Rango",
-    vision1958: "Analice por qué GMBC-OS est l'outil attendu depuis 1958 pour mettre fin à la douleur des distributeurs et comment il crée la Médecine du Futur."
+    vision1958: "Analice por qué GMBC-OS est l'outil attendu depuis 1958 pour mettre fin à la douleur des distributeurs et comment il crée la Médecine du Futur.",
+    wisdomTitle: "Pepitas de Sabiduría",
+    qrLabel: "Generar Código QR",
+    legalDisclaimer: "Análisis basado en la ciencia SAB NeoLife. No reemplaza el diagnóstico hospitalario."
   },
   [Language.PT]: {
     appName: "Coach JOSÉ",
@@ -143,7 +152,7 @@ export const translations = {
     academy: "Academia GMBC",
     live: "Sessão ao Vivo",
     control: "Torre de Controle",
-    welcome: "Sistema Soberano ativado. Sou o Coach JOSÉ, seu arquiteto de crescimento cellulaire e empresarial. Como vamos transformar sua vitalidade hoje?",
+    welcome: "Sistema Soberano ativado. Sou o Coach JOSÉ, seu arquiteto de crescimento cellulaire e empresarial. Como vamos transformer sua vitalidade hoje?",
     inputPlaceholder: "Comande la inteligência JOSÉ...",
     thinkingOn: "REFLEXÃO ON",
     thinkingOff: "REFLEXÃO OFF",
@@ -172,6 +181,9 @@ export const translations = {
     conversion: "Conversão",
     vitality: "Vitalidade",
     rank: "Rank",
-    vision1958: "Analise por que o GMBC-OS est l'outil attendu depuis 1958 pour mettre fin à la douleur des distributeurs e como ele cria a Medicina do Futuro."
+    vision1958: "Analise por que o GMBC-OS est l'outil attendu depuis 1958 pour mettre fin à la douleur des distributeurs e como ele cria a Medicina do Futuro.",
+    wisdomTitle: "Pepitas de Sabedoria",
+    qrLabel: "Gerar Código QR",
+    legalDisclaimer: "Análise baseada na ciência SAB NeoLife. Não substitui o diagnóstico hospitalar."
   }
 };
