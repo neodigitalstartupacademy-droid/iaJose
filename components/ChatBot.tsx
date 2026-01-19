@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, FileText, Paperclip, X, Activity, Brain, ShieldCheck, Stethoscope as MedIcon, ScrollText, Target, Sparkles, Trash2, History, Volume2, ChevronDown, Microscope, Play, Info, Beaker, GraduationCap, Pill, Thermometer, FlaskConical, Search, FileSearch, ClipboardList, Zap } from 'lucide-react';
+import { Send, FileText, Paperclip, X, Activity, Brain, ShieldCheck, Stethoscope as MedIcon, ScrollText, Target, Sparkles, Trash2, History, Volume2, ChevronDown, Microscope, Play, Info, Beaker, GraduationCap, Pill, Thermometer, FlaskConical, Search, FileSearch, ClipboardList, Zap, PlusCircle, LayoutGrid, HeartPulse } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage, DistributorData, Language } from '../types';
 import { getAI, analyzeMedicalDocument, textToSpeech } from '../services/geminiService';
@@ -19,29 +19,25 @@ interface Attachment { data: string; mimeType: string; name: string; }
 
 const WISDOM_QUOTES = [
   "La santé ne commence pas dans l'assiette, mais dans l'état intérieur.",
-  "Un patient guéri est un client perdu : brisez la matrice.",
-  "Le vieillissement n'est qu'une carence nutritionnelle prolongée.",
   "Nourrissez vos cellules, elles répareront votre vie.",
-  "La Médecine du Futur est la nutrition cellulaire de précision."
+  "La Médecine du Futur est la nutrition cellulaire de précision.",
+  "Le Smart Link est votre arme de duplication massive."
 ];
 
 const CHRONIC_LIST = [
-  { id: 'diabete', label: 'Diabète & Glycémie', icon: '🧬' },
-  { id: 'hypertension', label: 'Hypertension / Cardio', icon: '❤️' },
-  { id: 'arthrose', label: 'Arthrose & Rhumatismes', icon: '🦴' },
-  { id: 'cholesterol', label: 'Lipides / Cholestérol', icon: '🧪' },
-  { id: 'immunite', label: 'Immunité / VIH', icon: '🛡️' },
-  { id: 'poids', label: 'Gestion du Métabolisme', icon: '⚖️' }
+  { id: 'diabete', label: 'Diabète', icon: '🧬' },
+  { id: 'cardio', label: 'Cardio', icon: '❤️' },
+  { id: 'arthrose', label: 'Arthrose', icon: '🦴' },
+  { id: 'chol', label: 'Lipides', icon: '🧪' },
+  { id: 'immuno', label: 'Immunité', icon: '🛡️' }
 ];
 
 const MEDICAL_RESEARCH_CENTRES = [
-  { id: 'general', label: 'Médecine Générale', icon: <MedIcon size={16} />, prompt: "Consultant Expert en Médecine Générale : Analyser les carences de terrain et proposer une stratégie de prévention SAB.", scenarios: ["Bilan de vitalité annuel", "Fatigue inexpliquée", "Soutien immunitaire saisonnier"] },
-  { id: 'cardio', label: 'Cardiologie & Vasculaire', icon: <Activity size={16} />, prompt: "Nexus Recherche Cardiologie : Soutien de l'endothélium et de la fonction cardiaque. Analyser les marqueurs inflammatoires (CRPq, Homocystéine) et corréler avec Lipotropic et Omega-3 Plus.", scenarios: ["Récupération post-AVC", "Insuffisance veineuse", "Prévention Athérosclérose"] },
-  { id: 'gyn', label: 'Gynécologie & Fertilité', icon: <ShieldCheck size={16} />, prompt: "Expertise Gynécologique : Équilibre des axes hormonaux. Analyser le bilan (FSH, LH, Progestérone) et identifier les besoins en Vitamine E, Zinc et Magnésium.", scenarios: ["Troubles de la Ménopause", "Syndrome des Ovaires Polykystiques", "Accompagnement Fertilité"] },
-  { id: 'onco', label: 'Accompagnement Onco', icon: <Microscope size={16} />, prompt: "Oncologie Intégrative : Protection des cellules saines et réduction du stress oxydatif. Analyser le rapport pour identifier les besoins de soutien hépatique et immunitaire (Betaguard, Carotenoid).", scenarios: ["Réduction effets secondaires chimio", "Soutien post-opératoire", "Relance immunitaire profonde"] },
-  { id: 'endo', label: 'Endocrinologie', icon: <FlaskConical size={16} />, prompt: "Endocrinologie Métabolique : Analyse de la résistance à l'insuline et équilibre thyroïdien. Corréler TSH/T3/T4 avec les besoins en Iode, Sélénium et Chrome (Multi).", scenarios: ["Thyroïdite d'Hashimoto", "Métabolisme ralenti", "Gestion du stress surrénalien"] },
-  { id: 'gastro', label: 'Gastro-entérologie', icon: <Pill size={16} />, prompt: "Gastro-entérologie & Microbiote : Intégrité de la barrière intestinale. Analyser le rapport pour identifier une dysbiose ou une malabsorption.", scenarios: ["Côlon irritable", "Reflux gastrique chronique", "Restauration Microbiote"] },
-  { id: 'neuro', label: 'Neurologie & Cerveau', icon: <Brain size={16} />, prompt: "Neuro-Nutrition : Prévention de la neuro-dégénérescence. Analyser les besoins synaptiques (Omega-3 Plus, Tre-en-en, Lecithin).", scenarios: ["TDAH / Concentration", "Prévention Alzheimer/Parkinson", "Soutien Burn-out"] }
+  { id: 'cardio', label: 'Cardiologie', icon: <Activity size={16} />, prompt: "Analyse terrain Cardio-vasculaire.", scenarios: ["Post-AVC", "Hypertension", "Cholestérol"] },
+  { id: 'endo', label: 'Endocrino', icon: <FlaskConical size={16} />, prompt: "Analyse terrain Métabolique.", scenarios: ["Thyroïde", "Diabète type 2", "Cortisol"] },
+  { id: 'gastro', label: 'Gastro', icon: <Pill size={16} />, prompt: "Analyse barrière intestinale.", scenarios: ["Microbiote", "Leaky Gut", "Reflux"] },
+  { id: 'gyn', label: 'Gynéco', icon: <ShieldCheck size={16} />, prompt: "Analyse équilibre hormonal.", scenarios: ["Ménopause", "Fertilité", "Cycle"] },
+  { id: 'onco', label: 'Onco-Soutien', icon: <Microscope size={16} />, prompt: "Soutien terrain oncologie.", scenarios: ["Chimio-soutien", "Relance Immunité"] }
 ];
 
 const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, language }) => {
@@ -95,7 +91,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
     setShowMedMenu(false);
     
     const modelIdx = messages.length + 1;
-    setMessages(prev => [...prev, { role: 'user', text: attachment ? `${textToSend} [DOSSIER CLINIQUE: ${attachment.name}]` : textToSend, timestamp: Date.now() }]);
+    setMessages(prev => [...prev, { role: 'user', text: attachment ? `${textToSend} [Dossier: ${attachment.name}]` : textToSend, timestamp: Date.now() }]);
     setInput('');
     setIsLoading(true);
 
@@ -106,10 +102,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
       const sysInst = SYSTEM_INSTRUCTIONS(currentId, currentShop, isOwner, language, branding);
 
       if (attachment) {
-        // Renforcement du prompt pour l'analyse professionnelle
         const professionalPrompt = activeSpecialty 
-            ? `ANALYSE CLINIQUE NEXUS - SPÉCIALITÉ : ${activeSpecialty.label.toUpperCase()}\n\nCONTEXTE : ${textToSend || "Analyse de cas pratique"}\n\nINSTRUCTION : Utilisez la terminologie médicale spécifique à ce domaine tout en identifiant les carences cellulaires selon la science SAB NeoLife.`
-            : `ANALYSE MÉDICALE GÉNÉRALE : ${textToSend || "Analyse de document"}`;
+            ? `ANALYSE NEXUS CLINIQUE (${activeSpecialty.label.toUpperCase()}) : ${textToSend || "Identifier les carences cellulaires prioritaires."}`
+            : `ANALYSE TERRAIN SAB : ${textToSend || "Interprétation de rapport"}`;
             
         const res = await analyzeMedicalDocument(professionalPrompt, attachment.data, attachment.mimeType, sysInst);
         setMessages(prev => { const next = [...prev]; next[modelIdx].text = res; return next; });
@@ -119,9 +114,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
           model: useThinking ? MODELS.TEXT_COMPLEX : MODELS.TEXT_FAST, 
           config: { 
             systemInstruction: sysInst, 
-            maxOutputTokens: useThinking ? 40000 : 4000, 
+            maxOutputTokens: 30000, 
             tools: [{ googleSearch: {} }],
-            thinkingConfig: useThinking ? { thinkingBudget: 32000 } : undefined
+            thinkingConfig: useThinking ? { thinkingBudget: 24000 } : undefined
           } 
         });
         const result = await chat.sendMessageStream({ message: textToSend });
@@ -131,38 +126,26 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
         }
       }
     } catch (err) {
-      setMessages(prev => { const next = [...prev]; if (next[modelIdx]) next[modelIdx].text = "Lien interrompu. Reconnexion au Nexus Médical..."; return next; });
+      setMessages(prev => { const next = [...prev]; if (next[modelIdx]) next[modelIdx].text = "Lien interrompu. Reconnexion..."; return next; });
     } finally { 
         setIsLoading(false); 
-        // Note: On ne reset pas activeSpecialty tout de suite pour permettre d'autres questions sur le même cas
     }
   };
 
   const handleVoiceRead = async (text: string, index: number) => {
-    if (readingIdx === index) {
-      stopAllAudio();
-      setReadingIdx(null);
-      return;
-    }
-    
+    if (readingIdx === index) { stopAllAudio(); setReadingIdx(null); return; }
     stopAllAudio();
     setReadingIdx(index);
     try {
       const cleanText = text.replace(/[*#_~]/g, '').slice(0, 1500);
       const base64Audio = await textToSpeech(cleanText, VOICES[0].id);
-      if (base64Audio) {
-        await playPcmAudio(base64Audio);
-      }
-    } catch (err) {
-      console.error("TTS Error:", err);
-      setReadingIdx(null);
-    }
+      if (base64Audio) await playPcmAudio(base64Audio);
+    } catch (err) { setReadingIdx(null); }
   };
 
   const handleReset = () => {
     stopAllAudio();
-    const initial = [{ role: 'model', text: t.welcome.replace('Coach JOSÉ', brandName), timestamp: Date.now() }];
-    setMessages(initial as ChatMessage[]);
+    setMessages([{ role: 'model', text: t.welcome.replace('Coach JOSÉ', brandName), timestamp: Date.now() }]);
     localStorage.removeItem(historyKey);
     setActiveSpecialty(null);
   };
@@ -170,240 +153,207 @@ const ChatBot: React.FC<ChatBotProps> = ({ distData, isOwner, initialIntent, lan
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950 relative overflow-hidden transition-all duration-500 font-inter">
       
-      {/* Wisdom Header */}
-      <div className="h-10 bg-slate-50/50 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800/50 flex items-center justify-center px-6 overflow-hidden relative">
-         <div className="flex items-center gap-3 animate-in slide-in-from-right duration-1000" key={wisdomIdx}>
-            <Sparkles size={10} className="text-blue-500 animate-pulse" />
-            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 italic tracking-[0.1em] uppercase">"{WISDOM_QUOTES[wisdomIdx]}"</p>
+      {/* 🌟 Dynamic Wisdom Header - Slim & Discreet */}
+      <div className="h-8 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-100 dark:border-slate-800 flex items-center justify-center px-4 overflow-hidden shrink-0">
+         <div className="flex items-center gap-3 animate-in slide-in-from-right duration-[2500ms]" key={wisdomIdx}>
+            <Sparkles size={8} className="text-blue-500 animate-pulse" />
+            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 italic tracking-[0.2em] uppercase">"{WISDOM_QUOTES[wisdomIdx]}"</p>
          </div>
       </div>
 
-      {/* Reader Area - Immersive Professional Typography */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-[8%] lg:px-[12%] py-12 space-y-24 bg-transparent">
+      {/* 📖 CENTRED READING AREA - Typography 20px (Optimized for Focus) */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-[12%] lg:px-[22%] xl:px-[28%] py-16 space-y-24 bg-transparent scroll-smooth">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-6 duration-700`}>
-            <div className={`relative transition-all ${
-              msg.role === 'model' 
-                ? 'w-full bg-white dark:bg-slate-900/40 rounded-[4.5rem] p-12 md:p-24 border border-slate-100 dark:border-slate-800/50 shadow-sm' 
-                : 'max-w-[85%] bg-slate-900 dark:bg-slate-800 text-white rounded-[2.5rem] p-10 shadow-2xl border border-slate-800'
-            }`}>
+          <div key={idx} className={`w-full flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-10 duration-1000`}>
+            <div className={`w-full relative ${msg.role === 'user' ? 'max-w-[85%] ml-auto' : 'max-w-none'}`}>
               
               {msg.role === 'model' && (
-                <div className="flex items-center justify-between mb-12 pb-10 border-b border-slate-50 dark:border-slate-800/50">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 synergy-bg rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl">{brandName[0]}</div>
-                    <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.5em] text-blue-600 dark:text-blue-400">{brandName} CLINICAL NEXUS</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic tracking-tighter">Support Praticien & Recherche Bio-Cellulaire</p>
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50 dark:border-slate-900/50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 synergy-bg rounded-lg flex items-center justify-center text-white font-black text-lg shadow-md">{brandName[0]}</div>
+                    <div className="leading-tight">
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 dark:text-blue-400">{brandName} NEXUS</p>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest italic tracking-tighter">Science Cellulaire SAB v4.5</p>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <button 
-                        onClick={() => handleVoiceRead(msg.text, idx)}
-                        className={`p-4 rounded-2xl transition-all flex items-center gap-4 ${readingIdx === idx ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-blue-600'}`}
-                    >
-                        <Volume2 size={22} />
-                        <span className="text-[11px] font-black uppercase tracking-widest hidden md:block">
-                        {readingIdx === idx ? "SYNTHÈSE EN COURS..." : "ÉCOUTER LE RAPPORT"}
-                        </span>
-                    </button>
-                  </div>
+                  <button onClick={() => handleVoiceRead(msg.text, idx)} className={`p-2.5 rounded-xl transition-all flex items-center gap-2 ${readingIdx === idx ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-blue-600'}`}>
+                    <Volume2 size={16} />
+                    <span className="text-[9px] font-black uppercase tracking-widest hidden md:block">{readingIdx === idx ? "SYNTHÈSE..." : "ÉCOUTER"}</span>
+                  </button>
                 </div>
               )}
 
-              {/* MASTER TYPOGRAPHY (prose-2xl) */}
-              <div className={`max-w-none ${msg.role === 'model' ? 'prose prose-xl md:prose-2xl dark:prose-invert prose-slate prose-headings:font-black prose-headings:tracking-tighter prose-headings:uppercase prose-p:leading-[1.85] prose-li:my-6 prose-strong:text-blue-600 dark:prose-strong:text-blue-400' : 'text-2xl font-bold leading-relaxed'}`}>
+              {/* PROFESSIONAL TYPOGRAPHY - 20px Base (prose-xl) */}
+              <div className={`max-w-none ${msg.role === 'model' ? 'prose prose-xl md:prose-2xl dark:prose-invert prose-slate prose-headings:font-black prose-p:leading-[1.8] prose-li:my-4 prose-strong:text-blue-600' : 'bg-slate-900 dark:bg-slate-800 text-white rounded-3xl p-8 md:p-12 text-xl md:text-2xl font-bold shadow-2xl border border-slate-800 inline-block float-right transition-transform hover:scale-[1.01]'}`}>
                 <ReactMarkdown>{msg.text}</ReactMarkdown>
               </div>
+              <div className="clear-both"></div>
             </div>
           </div>
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-12 py-16 opacity-50">
+          <div className="flex items-center gap-10 py-12 opacity-40 justify-center md:justify-start">
              <div className="relative">
-                <div className="w-20 h-20 border-2 border-blue-600/10 border-t-blue-600 rounded-full animate-spin"></div>
-                <Brain className="absolute inset-0 m-auto text-blue-600 animate-pulse" size={28} />
+                <div className="w-12 h-12 border border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+                <Brain className="absolute inset-0 m-auto text-blue-600 animate-pulse" size={20} />
              </div>
-             <div className="space-y-2">
-                <p className="text-sm font-black uppercase tracking-[0.5em] text-slate-400">Croisement des données cliniques Nexus...</p>
-                <p className="text-[11px] text-slate-300 font-bold uppercase tracking-widest italic tracking-tight">Analyse de terrain cellulaire SAB v4.5</p>
-             </div>
+             <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-400 italic">Croisement des données Nexus...</p>
           </div>
         )}
       </div>
 
-      {/* Input & Expert Medical Menus */}
-      <div className="p-8 md:p-12 bg-white/95 dark:bg-slate-950/95 backdrop-blur-3xl border-t border-slate-100 dark:border-slate-800 space-y-8">
-        <div className="max-w-6xl mx-auto">
-          
-          {/* EXPERT ACTION BAR */}
-          <div className="relative flex flex-wrap items-center justify-center gap-4 mb-6">
-            
-            {/* NEXUS MÉDICAL - SPÉCIALITÉS INTERACTIVES */}
-            <div className="relative">
-                <button 
-                    onClick={() => { setShowMedMenu(!showMedMenu); setShowChronicMenu(false); }}
-                    className={`flex items-center gap-3 px-8 py-5 rounded-2xl border transition-all text-[11px] font-black uppercase tracking-widest shadow-sm ${showMedMenu ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/30' : (activeSpecialty ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800')}`}
-                >
-                    <MedIcon size={18} /> {activeSpecialty ? activeSpecialty.label : 'Espace Médecins'} <ChevronDown size={14} className={`transition-transform ${showMedMenu ? 'rotate-180' : ''}`} />
+      {/* 🧭 CONTEXTUAL TRAY - Suggested scenarios */}
+      {activeSpecialty && !isLoading && (
+         <div className="px-6 md:px-[20%] py-4 flex flex-wrap gap-2 justify-center animate-in slide-in-from-bottom-6 z-10 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mr-2"><Search size={12}/> SCÉNARIOS CLINIQUES :</span>
+            {activeSpecialty.scenarios.map((sc: string, i: number) => (
+                <button key={i} onClick={() => handleSend(`Analyse de terrain pour le cas : ${sc}.`)} className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100 dark:border-blue-800 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                    {sc}
                 </button>
+            ))}
+         </div>
+      )}
+
+      {/* 🕹️ SATELLITE COCKPIT - Ergonomic Command Bar */}
+      <div className="px-6 md:px-[8%] lg:px-[12%] pb-10 pt-6 bg-white dark:bg-slate-950 border-t border-slate-50 dark:border-slate-900 shadow-[0_-20px_50px_rgba(0,0,0,0.02)] shrink-0">
+        <div className="max-w-7xl mx-auto flex items-end gap-5">
+          
+          {/* 📍 LEFT SATELLITE: Professional Tools (Healthcare/Hospital) */}
+          <div className="flex items-center gap-4 mb-2">
+             <div className="relative flex flex-col items-center group">
+                <button 
+                    onClick={() => { setShowMedMenu(!showMedMenu); setShowChronicMenu(false); }} 
+                    className={`p-5 rounded-2xl transition-all shadow-lg border-2 ${showMedMenu ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800 hover:text-blue-600'}`}
+                >
+                    <MedIcon size={24} />
+                </button>
+                <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Espace Corps<br/>Hospitaliers</span>
                 
                 {showMedMenu && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3.5rem] p-10 shadow-[0_60px_120px_rgba(0,0,0,0.5)] grid grid-cols-2 md:grid-cols-4 gap-4 w-[350px] md:w-[900px] animate-in slide-in-from-bottom-6">
-                        <div className="col-span-full mb-4 flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-6">
-                            <div className="flex items-center gap-4">
-                                <Microscope size={24} className="text-blue-600" />
-                                <div>
-                                    <h4 className="text-[14px] font-black uppercase tracking-widest text-slate-500">Centre de Recherche Clinique</h4>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Uploadez le document patient après avoir sélectionné votre corps de métier</p>
-                                </div>
-                            </div>
-                            <button onClick={() => { setActiveSpecialty(null); setShowMedMenu(false); }} className="text-[10px] text-slate-400 hover:text-red-500 font-black uppercase tracking-widest">Sortir du Nexus</button>
+                    <div className="absolute bottom-full left-0 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-8 shadow-[0_40px_80px_rgba(0,0,0,0.3)] w-[320px] md:w-[600px] grid grid-cols-2 md:grid-cols-3 gap-3 animate-in slide-in-from-bottom-4 z-50">
+                        <div className="col-span-full mb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b pb-4 flex items-center justify-between">
+                            <span className="flex items-center gap-3"><HeartPulse size={14} /> ESPACE CORPS HOSPITALIERS</span>
+                            <Info size={12} className="text-blue-500" />
                         </div>
-                        {MEDICAL_RESEARCH_CENTRES.map((spec) => (
-                            <button 
-                                key={spec.id} 
-                                onClick={() => { setActiveSpecialty(spec); setShowMedMenu(false); }}
-                                className={`flex flex-col items-center justify-center gap-4 px-4 py-8 rounded-[2rem] transition-all group border-2 ${activeSpecialty?.id === spec.id ? 'bg-blue-600 text-white border-blue-400 shadow-xl' : 'bg-slate-50 dark:bg-slate-800 border-transparent hover:border-blue-400'}`}
-                            >
-                                <div className={`p-4 rounded-2xl transition-colors shadow-sm ${activeSpecialty?.id === spec.id ? 'bg-white/20' : 'bg-white dark:bg-slate-700 group-hover:bg-blue-500 group-hover:text-white'}`}>{spec.icon}</div>
-                                <span className="text-[10px] font-black uppercase tracking-tight text-center leading-none px-2">{spec.label}</span>
+                        {MEDICAL_RESEARCH_CENTRES.map(m => (
+                            <button key={m.id} onClick={() => { setActiveSpecialty(m); handleSend(m.prompt); }} className="flex flex-col items-center gap-3 p-5 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-xl transition-all group">
+                                <div className="p-2 bg-white dark:bg-slate-700 rounded-lg group-hover:bg-blue-400 transition-colors shadow-sm">{m.icon}</div>
+                                <span className="text-[10px] font-black uppercase text-center leading-none">{m.label}</span>
                             </button>
                         ))}
                     </div>
                 )}
-            </div>
+             </div>
 
-            {/* PROTOCOLE MALADIES CHRONIQUES */}
-            <div className="relative">
+             <div className="relative flex flex-col items-center group">
                 <button 
-                    onClick={() => { setShowChronicMenu(!showChronicMenu); setShowMedMenu(false); }}
-                    className={`flex items-center gap-3 px-8 py-5 rounded-2xl border transition-all text-[11px] font-black uppercase tracking-widest shadow-sm ${showChronicMenu ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/30' : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800'}`}
+                    onClick={() => { setShowChronicMenu(!showChronicMenu); setShowMedMenu(false); }} 
+                    className={`p-5 rounded-2xl transition-all shadow-lg border-2 ${showChronicMenu ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800 hover:text-blue-600'}`}
                 >
-                    <ShieldCheck size={18} /> Maladies Chroniques <ChevronDown size={14} className={`transition-transform ${showChronicMenu ? 'rotate-180' : ''}`} />
+                    <ShieldCheck size={24} />
                 </button>
+                <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Maladies<br/>Chroniques</span>
                 
                 {showChronicMenu && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[3rem] p-8 shadow-[0_50px_100px_rgba(0,0,0,0.4)] grid grid-cols-2 md:grid-cols-3 gap-3 w-[320px] md:w-[650px] animate-in slide-in-from-bottom-2">
-                         <div className="col-span-full mb-2 flex items-center gap-3 border-b border-slate-50 dark:border-slate-800 pb-5">
-                            <Beaker size={20} className="text-blue-600" />
-                            <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-500">Protocoles de Terrain SAB</h4>
-                        </div>
-                        {CHRONIC_LIST.map((mal) => (
-                            <button 
-                                key={mal.id} 
-                                onClick={() => handleSend(`Protocole Maladies Chroniques pour : ${mal.label}. Analyser les carences cellulaires cumulées.`)}
-                                className="flex items-center gap-4 px-6 py-5 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-[1.5rem] transition-all text-left group"
-                            >
-                                <span className="text-3xl">{mal.icon}</span>
-                                <span className="text-[10px] font-black uppercase tracking-tight leading-none">{mal.label}</span>
+                    <div className="absolute bottom-full left-0 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-8 shadow-[0_40px_80px_rgba(0,0,0,0.3)] w-[300px] md:w-[450px] grid grid-cols-2 gap-3 animate-in slide-in-from-bottom-4 z-50">
+                         <div className="col-span-full mb-4 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b pb-4">PROTOCOLES PATHOLOGIES</div>
+                         {CHRONIC_LIST.map(c => (
+                            <button key={c.id} onClick={() => handleSend(`Analyse terrain pour pathologie : ${c.label}.`)} className="flex items-center gap-5 p-5 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-xl transition-all">
+                                <span className="text-3xl">{c.icon}</span>
+                                <span className="text-[10px] font-black uppercase tracking-tighter">{c.label}</span>
                             </button>
-                        ))}
+                         ))}
                     </div>
                 )}
-            </div>
+             </div>
 
-            <button 
-                onClick={() => handleSend("Établir un protocole nutritionnel cellulaire global pour restauration du terrain.")}
-                className="flex items-center gap-3 px-8 py-5 bg-white dark:bg-slate-900 text-slate-500 hover:text-blue-600 rounded-2xl border border-slate-100 dark:border-slate-800 transition-all shadow-sm text-[11px] font-black uppercase tracking-widest"
-            >
-                <ScrollText size={18} /> Protocole Cellulaire
-            </button>
+             <div className="flex flex-col items-center group">
+                <button 
+                    onClick={() => fileInputRef.current?.click()} 
+                    className={`p-5 rounded-2xl transition-all border-2 shadow-lg ${attachment ? 'bg-blue-600 text-white border-blue-600 animate-pulse' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800 hover:text-blue-600'}`}
+                >
+                    <Paperclip size={24} />
+                    <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAttachment({data:(ev.target?.result as string).split(',')[1], mimeType:f.type, name:f.name}); r.readAsDataURL(f); } }} />
+                </button>
+                <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Bilan<br/>Dossier</span>
+             </div>
           </div>
 
-          {/* SCENARIOS SUGGESTIONS - Only visible when a medical specialty is active */}
-          {activeSpecialty && (
-             <div className="flex flex-wrap items-center justify-center gap-2 mb-6 animate-in slide-in-from-top-4">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mr-2 flex items-center gap-2">
-                    <ClipboardList size={12} /> SCÉNARIOS CLINIQUES :
-                </span>
-                {activeSpecialty.scenarios.map((sc: string, idx: number) => (
-                    <button 
-                        key={idx}
-                        onClick={() => handleSend(`Scénario Clinique ${activeSpecialty.label} : ${sc}. Proposez une analyse de terrain et une stratégie de restauration.`)}
-                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-full text-[9px] font-black uppercase tracking-tight transition-all border border-slate-200 dark:border-slate-700"
-                    >
-                        {sc}
-                    </button>
-                ))}
-             </div>
-          )}
-
-          {/* INPUT COMMAND CENTRE */}
-          <div className="relative flex items-end gap-5 bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-[3.5rem] p-5 transition-all focus-within:border-blue-600/40 focus-within:bg-white dark:focus-within:bg-slate-950 shadow-sm">
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
-              className={`p-5 rounded-[1.8rem] transition-all flex flex-col items-center justify-center gap-1 ${attachment ? 'bg-blue-600 text-white shadow-xl animate-pulse' : 'text-slate-400 hover:text-blue-600 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700'}`}
-              title="Attacher Bilan Biologique / Rapport (Nexus)"
-            >
-              <Paperclip size={26} />
-              <span className="text-[8px] font-black uppercase">BIO</span>
-              <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAttachment({data:(ev.target?.result as string).split(',')[1], mimeType:f.type, name:f.name}); r.readAsDataURL(f); } }} />
-            </button>
-
+          {/* 🎯 CENTRE: MAIN INPUT (Command Center) */}
+          <div className="flex-1 relative flex items-center bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-[3rem] px-8 transition-all focus-within:border-blue-600/40 focus-within:bg-white dark:focus-within:bg-slate-950 shadow-inner group">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-              placeholder={activeSpecialty ? `Mode Clinical Nexus (${activeSpecialty.label}). Analysez le dossier...` : "Commandez l'intelligence JOSÉ..."}
+              placeholder={activeSpecialty ? `Expertise ${activeSpecialty.label.toUpperCase()} active...` : "Instruction Coach JOSÉ..."}
               rows={1}
-              className="flex-1 bg-transparent py-5 text-2xl font-bold text-slate-900 dark:text-white outline-none resize-none placeholder:text-slate-300 min-h-[70px] max-h-56"
+              className="flex-1 bg-transparent py-7 text-2xl font-bold text-slate-900 dark:text-white outline-none resize-none placeholder:text-slate-200 min-h-[72px] max-h-56"
               onInput={(e: any) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
             />
+            {input.length === 0 && !activeSpecialty && (
+              <Zap size={20} className="text-blue-400 absolute right-8 top-1/2 -translate-y-1/2 opacity-20" />
+            )}
+          </div>
 
-            <div className="flex items-center gap-4 mb-2 mr-2">
+          {/* ⚙️ RIGHT SATELLITE: AI Brain & Send (with labels) */}
+          <div className="flex items-center gap-4 mb-2">
+             <div className="flex flex-col items-center group">
                 <button 
                     onClick={() => setUseThinking(!useThinking)} 
-                    className={`p-5 rounded-[1.5rem] transition-all ${useThinking ? 'bg-blue-600 text-white shadow-xl' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm'}`} 
-                    title="Analyse de Mécanismes Profonds"
+                    className={`p-5 rounded-2xl transition-all border-2 shadow-lg ${useThinking ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 border-slate-100 dark:border-slate-800 hover:text-blue-600'}`}
                 >
-                    <Brain size={26} className={useThinking ? 'animate-pulse' : ''} />
+                    <Brain size={24} className={useThinking ? 'animate-pulse' : ''} />
                 </button>
+                <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Analyse Profonde<br/>(Pensée IA)</span>
+             </div>
+             
+             <div className="flex flex-col items-center group">
                 <button 
                     onClick={() => handleSend()} 
                     disabled={isLoading || (!input.trim() && !attachment)} 
-                    className="p-6 synergy-bg text-white rounded-[2rem] shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-20"
+                    className="p-7 synergy-bg text-white rounded-[2.2rem] shadow-[0_15px_40px_rgba(37,99,235,0.4)] hover:scale-105 active:scale-95 transition-all disabled:opacity-20"
                 >
                     <Send size={26} />
                 </button>
-            </div>
+                <span className="text-[9px] font-black uppercase tracking-widest mt-2 text-slate-400 dark:text-slate-600 group-hover:text-blue-600 text-center leading-tight">Envoyer<br/>Nexus</span>
+             </div>
           </div>
+        </div>
 
-          {/* FOOTER CLINICAL Cockpit */}
-          <div className="flex flex-col md:flex-row items-center justify-between mt-8 px-10 gap-6">
-             <div className="flex items-center gap-4 text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] text-center md:text-left">
-                <Info size={14} className="text-blue-500" />
-                <span>NEXUS SOUVERAIN : Support à la décision clinique via Science SAB NeoLife.</span>
-             </div>
-             <div className="flex items-center gap-10">
-                <p className="text-[10px] text-slate-300 dark:text-slate-700 font-black uppercase tracking-widest flex items-center gap-3">
-                    <GraduationCap size={14} /> CLINICAL OS v4.5
-                </p>
-                <button onClick={handleReset} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-3">
-                   <Trash2 size={14} /> Réinitialiser le Nexus
+        {/* 📋 COCKPIT FOOTER - Global orientation */}
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between mt-10 px-10 border-t border-slate-50 dark:border-slate-900/50 pt-8 gap-6">
+            <div className="flex items-center gap-8 text-[10px] text-slate-400 dark:text-slate-700 font-black uppercase tracking-[0.4em]">
+                <div className="flex items-center gap-3 text-blue-500/80"><Info size={14} /> CLINICAL OS v4.5</div>
+                <span className="opacity-20">|</span>
+                <span>SOUVERAINETÉ NDSA</span>
+            </div>
+            <div className="flex items-center gap-10">
+                <button onClick={() => handleSend("Générer un rapport de synthèse global sur l'état du terrain cellulaire.")} className="text-[10px] font-black text-slate-500 hover:text-blue-600 uppercase tracking-widest flex items-center gap-4 transition-colors group">
+                    <ScrollText size={16} className="group-hover:scale-110 transition-transform" /> SYNTHÈSE GLOBALE
                 </button>
-             </div>
-          </div>
+                <button onClick={handleReset} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-4 group">
+                    <Trash2 size={16} className="group-hover:scale-110 transition-transform" /> PURGER NEXUS
+                </button>
+            </div>
         </div>
       </div>
 
-      {attachment && (
-        <div className="absolute bottom-60 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] px-12 py-5 rounded-full font-black flex items-center gap-6 shadow-[0_40px_100px_rgba(37,99,235,0.7)] border border-white/20 animate-in slide-in-from-bottom-10 duration-500">
-          <FileSearch size={22} className="animate-pulse" /> {attachment.name.toUpperCase()} <X size={18} className="cursor-pointer hover:rotate-90 transition-all ml-6" onClick={() => setAttachment(null)} />
+      {/* 🏥 Active Context Badge (Header Overlay) */}
+      {activeSpecialty && (
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 px-10 py-4 bg-slate-950/90 backdrop-blur-md text-white rounded-full shadow-[0_40px_100px_rgba(37,99,235,0.5)] border-2 border-blue-500/50 flex items-center gap-5 animate-in slide-in-from-top-12 duration-700 z-50">
+            <div className="w-10 h-10 rounded-xl synergy-bg flex items-center justify-center border border-white/10 shadow-lg">
+                {activeSpecialty.icon}
+            </div>
+            <span className="text-[11px] font-black uppercase tracking-[0.5em]">MODE ACTIF : {activeSpecialty.label}</span>
+            <button onClick={() => setActiveSpecialty(null)} className="ml-6 p-1 hover:text-red-500 transition-colors"><X size={20} /></button>
         </div>
       )}
-      
-      {activeSpecialty && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-10 py-4 bg-slate-900 text-white rounded-full shadow-2xl border-2 border-blue-500/50 flex items-center gap-4 animate-in slide-in-from-top-6 duration-700">
-            <div className="flex -space-x-2">
-                <div className="w-8 h-8 rounded-full synergy-bg flex items-center justify-center border-2 border-slate-900 shadow-lg">
-                    {activeSpecialty.icon}
-                </div>
-            </div>
-            <span className="text-[11px] font-black uppercase tracking-[0.4em]">NEXUS CLINIQUE : {activeSpecialty.label}</span>
-            <button onClick={() => setActiveSpecialty(null)} className="ml-2 hover:text-red-500 transition-colors"><X size={14} /></button>
+
+      {/* 📎 Attachment Badge (Floating) */}
+      {attachment && (
+        <div className="absolute bottom-48 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] px-10 py-4 rounded-full font-black flex items-center gap-6 shadow-2xl border border-white/20 animate-in slide-in-from-bottom-12 z-50">
+          <FileSearch size={20} className="animate-pulse" /> {attachment.name.toUpperCase()} <X size={16} className="cursor-pointer ml-6 hover:rotate-90 transition-all" onClick={() => setAttachment(null)} />
         </div>
       )}
     </div>
