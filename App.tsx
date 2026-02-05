@@ -11,6 +11,7 @@ import ControlTower from './components/ControlTower';
 import SocialSync from './components/SocialSync';
 import IAWorld from './components/IAWorld';
 import VisualStudio from './components/VisualStudio';
+import FinancialFreedom from './components/FinancialFreedom';
 import Sidebar from './components/Sidebar';
 import Auth from './components/Auth';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK, FOUNDER_EMAIL } from './constants';
@@ -41,7 +42,6 @@ const App: React.FC = () => {
     if (currentUser) {
       setIsOwner(currentUser.distData.id === JOSE_ID || currentUser.email === FOUNDER_EMAIL);
       
-      // Inject Dynamic Branding Colors
       const branding = currentUser.distData.branding;
       if (branding?.primaryColor) {
         document.documentElement.style.setProperty('--ndsa-blue', branding.primaryColor);
@@ -119,7 +119,6 @@ const App: React.FC = () => {
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            {/* Language Selector */}
             <div className="relative">
               <button 
                 onClick={() => setIsLangOpen(!isLangOpen)}
@@ -172,6 +171,7 @@ const App: React.FC = () => {
           {activeView === AppView.CONTROL_TOWER && <ControlTower language={language} onUpdateBranding={refreshUser} />}
           {activeView === AppView.SOCIAL_SYNC && <SocialSync distId={currentUser.distData.id} shopUrl={currentUser.distData.shopUrl} language={language} />}
           {activeView === AppView.VISUAL_STUDIO && <VisualStudio language={language} />}
+          {activeView === AppView.FINANCIAL_FREEDOM && <FinancialFreedom />}
         </section>
       </main>
     </div>

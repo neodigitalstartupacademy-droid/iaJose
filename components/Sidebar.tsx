@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LayoutDashboard, MessageSquare, Mic, Activity, Globe, Share2, GraduationCap, Layout, Zap, Wand2 } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Mic, Activity, Globe, Share2, GraduationCap, Layout, Zap, Wand2, DollarSign } from 'lucide-react';
 import { AppView, Language } from '../types';
 import { translations } from '../translations';
 
@@ -19,6 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isOpen, isO
   
   const menuItems = [
     { id: AppView.DASHBOARD, icon: <LayoutDashboard size={18} />, label: t.dashboard },
+    { id: AppView.FINANCIAL_FREEDOM, icon: <DollarSign size={18} />, label: "Liberté Financière", special: true },
     { id: AppView.SOCIAL_SYNC, icon: <Share2 size={18} />, label: t.socialSync },
     { id: AppView.IA_WORLD, icon: <Globe size={18} />, label: t.iaWorld },
     { id: AppView.CHAT, icon: <MessageSquare size={18} />, label: t.chat },
@@ -43,11 +44,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isOpen, isO
             key={item.id}
             onClick={() => onViewChange(item.id)}
             className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all ${
-              activeView === item.id ? 'bg-white text-slate-950 shadow-xl' : 'text-slate-500 hover:text-white'
+              activeView === item.id 
+                ? (item.special ? 'bg-amber-500 text-black shadow-[0_0_30px_rgba(245,158,11,0.4)]' : 'bg-white text-slate-950 shadow-xl') 
+                : (item.special ? 'text-amber-500/60 hover:text-amber-500 hover:bg-white/5' : 'text-slate-500 hover:text-white')
             }`}
           >
             {item.icon}
             <span className="font-black text-xs uppercase tracking-widest">{item.label}</span>
+            {item.special && activeView !== item.id && <Zap size={10} className="ml-auto text-amber-500 animate-pulse" />}
           </button>
         ))}
       </nav>

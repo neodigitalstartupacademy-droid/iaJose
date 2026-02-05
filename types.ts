@@ -8,7 +8,8 @@ export enum AppView {
   CONTROL_TOWER = 'control_tower',
   SOCIAL_SYNC = 'social_sync',
   IA_WORLD = 'ia_world',
-  VISUAL_STUDIO = 'visual_studio'
+  VISUAL_STUDIO = 'visual_studio',
+  FINANCIAL_FREEDOM = 'financial_freedom'
 }
 
 export enum Language {

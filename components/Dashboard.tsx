@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, MessageSquare, Shield, ShieldCheck, Users, ArrowRight, Link, Copy, Check, Clock, Crown, TrendingUp, Share2, BarChart3, Target, MousePointer2, Info, UserPlus, ShoppingCart, Zap, UserCheck, AlertCircle, Sparkles, Heart, Loader2, XCircle, CheckCircle2, Save, Globe, Wand2, ShieldAlert, ScrollText } from 'lucide-react';
+import { Activity, MessageSquare, Shield, ShieldCheck, Users, ArrowRight, Link, Copy, Check, Clock, Crown, TrendingUp, Share2, BarChart3, Target, MousePointer2, Info, UserPlus, ShoppingCart, Zap, UserCheck, AlertCircle, Sparkles, Heart, Loader2, XCircle, CheckCircle2, Save, Globe, Wand2, ShieldAlert, ScrollText, DollarSign } from 'lucide-react';
 import { AppView, DistributorData, UserAccount, Language } from '../types';
 import { JOSE_ID, DEFAULT_NEOLIFE_LINK } from '../constants';
 import { translations } from '../translations';
@@ -78,6 +78,32 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData, 
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700 pb-20 px-4 pt-10">
+      
+      {/* 🚀 PRIORITY: GLOBAL FREEDOM ENGINE CARD */}
+      <div className="relative group overflow-hidden rounded-[3rem] p-8 md:p-12 bg-slate-950 text-white shadow-2xl transition-all hover:scale-[1.01] active:scale-95 cursor-pointer" onClick={() => onViewChange(AppView.FINANCIAL_FREEDOM)}>
+         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-transparent opacity-50"></div>
+         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-amber-500 text-black rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-pulse">
+                  <DollarSign size={24} strokeWidth={3} />
+                </div>
+                <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.4em]">Moteur de Succès Mondial NDSA</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none mb-4">
+                LIBERTÉ <span className="text-amber-500">FINANCIÈRE</span>
+              </h2>
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] md:text-xs">
+                Activez votre multinationale digitale sans frontières dès maintenant.
+              </p>
+            </div>
+            <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md px-8 py-5 rounded-3xl border border-white/10 group-hover:bg-amber-500 group-hover:text-black transition-all">
+               <span className="text-sm font-black uppercase tracking-widest">LANCER LE MOTEUR</span>
+               <ArrowRight size={20} />
+            </div>
+         </div>
+      </div>
+
       {/* Wisdom Ticker */}
       <div className="bg-blue-600/10 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-900/30 rounded-2xl p-4 overflow-hidden relative group">
          <div className="flex items-center gap-4 animate-in slide-in-from-right duration-1000" key={wisdomIdx}>
@@ -86,7 +112,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange, isOwner, distData, 
                "{WISDOM_NUGGETS[wisdomIdx]}"
             </p>
          </div>
-         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-blue-500/40 uppercase tracking-widest hidden md:block">NDSA ARCHIVES</div>
       </div>
 
       <div className={`relative overflow-hidden rounded-[2.5rem] p-10 lg:p-16 text-white shadow-2xl group`}>
